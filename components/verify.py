@@ -34,7 +34,7 @@ component = tanjun.Component()
 @tanjun.annotations.with_annotated_args(follow_wrapped=True)
 @tanjun.as_message_command('verify')
 @tanjun.as_slash_command('verify', 'Links your hypixel account')
-async def verify(ctx: tanjun.abc.Context, ign: Annotated[tanjun.annotations.Str, "You IGN"],
+async def verify(ctx: tanjun.abc.Context, ign: Annotated[tanjun.annotations.Str, "Your IGN"],
                  config: Config = alluka.inject(type=Config),
                  db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     await trigger_typing(ctx)
