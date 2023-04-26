@@ -5,6 +5,7 @@ from utils.config.config import ConfigHandler
 
 config = ConfigHandler().get_config()
 
+
 async def weight_banned_check(ctx: tanjun.abc.Context) -> bool | None:
     if config['stats']['weight_banned_role_id'] in ctx.member.role_ids:
         embed = hikari.Embed(
@@ -17,11 +18,17 @@ async def weight_banned_check(ctx: tanjun.abc.Context) -> bool | None:
 
     return True
 
+
 async def active_check(ctx: tanjun.abc.Context) -> bool | None:
     return await _has_role(ctx, config['misc']['allowed_role_id'])
 
+
 async def jr_mod_check(ctx: tanjun.abc.Context) -> bool | None:
     return await _has_role(ctx, config['jr_mod_role_id'])
+
+
+async def helper_check(ctx: tanjun.abc.Context) -> bool | None:
+    return await _has_role(ctx, config['helper_role_id'])
 
 
 async def mod_check(ctx: tanjun.abc.Context) -> bool | None:

@@ -111,6 +111,7 @@ class Config(TypedDict, total=False):
     jr_admin_role_id: int
     co_owner_role_id: int
     owner_role_id: int
+    helper_role_id: int
 
     mod_chat_channel_id: int
     admin_chat_channel_id: int
