@@ -8,7 +8,7 @@ from utils.config.config import ConfigHandler
 config = ConfigHandler().get_config()
 
 
-async def registered_check(ctx: tanjun.abc.Context, db: alluka.Injected[aiosqlite.Connection]) -> None | bool:
+async def registered_check(ctx: tanjun.abc.Context, db: alluka.Injected[aiosqlite.Connection]):
     cursor: aiosqlite.Cursor
     async with db.cursor() as cursor:
         await cursor.execute('''

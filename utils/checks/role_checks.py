@@ -5,7 +5,8 @@ from utils.config.config import ConfigHandler
 
 config = ConfigHandler().get_config()
 
-async def weight_banned_check(ctx: tanjun.abc.Context) -> bool | None:
+
+async def weight_banned_check(ctx: tanjun.abc.Context):
     if config['stats']['weight_banned_role_id'] in ctx.member.role_ids:
         embed = hikari.Embed(
             title='Error',
@@ -17,22 +18,24 @@ async def weight_banned_check(ctx: tanjun.abc.Context) -> bool | None:
 
     return True
 
-async def active_check(ctx: tanjun.abc.Context) -> bool | None:
+
+async def active_check(ctx: tanjun.abc.Context):
     return await _has_role(ctx, config['misc']['allowed_role_id'])
 
-async def jr_mod_check(ctx: tanjun.abc.Context) -> bool | None:
+
+async def jr_mod_check(ctx: tanjun.abc.Context):
     return await _has_role(ctx, config['jr_mod_role_id'])
 
 
-async def mod_check(ctx: tanjun.abc.Context) -> bool | None:
+async def mod_check(ctx: tanjun.abc.Context):
     return await _has_role(ctx, config['mod_role_id'])
 
 
-async def jr_admin_check(ctx: tanjun.abc.Context) -> bool | None:
+async def jr_admin_check(ctx: tanjun.abc.Context):
     return await _has_role(ctx, config['jr_admin_role_id'])
 
 
-async def admin_check(ctx: tanjun.abc.Context) -> bool | None:
+async def admin_check(ctx: tanjun.abc.Context):
     return await _has_role(ctx, config['admin_role_id'])
 
 
