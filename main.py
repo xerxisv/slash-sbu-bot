@@ -56,6 +56,7 @@ command_usage = {
     "skycrypt": "+s <ign> [profile]",
     # verify
     "verify": "+verify <ign>",
+    "forceverify": "+forceverify <ign> <member>",
     # suggestions
     "suggest": "+suggest <your_suggestion>"
 }
