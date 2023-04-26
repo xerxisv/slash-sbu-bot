@@ -3,12 +3,14 @@ import os
 import tarfile
 
 import aiohttp
+import aiosqlite
 import alluka
 import hikari.api.cache
 import tanjun
 
 from utils.config import Config
 from utils.error_utils import exception_to_string
+from utils.database import DBConnection, convert_to_user
 
 api_key = os.getenv('APIKEY')
 
@@ -75,6 +77,107 @@ async def backup_db():
             for file in files:
                 if file.endswith((".db", ".json")):
                     tar_handle.add(os.path.join(root, file), arcname=file)
+
+
+@component.with_schedule
+@tanjun.as_interval(datetime.timedelta(days=1))
+async def check_verified(db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection),
+                         cache: hikari.api.Cache = alluka.inject(type=hikari.api.Cache),
+                         config: Config = alluka.inject(type=Config)
+                        ):
+    cursor: aiosqlite.Cursor = await DBConnection().get_db().cursor()
+
+    users: tuple = ()
+
+    for idx, guild in enumerate(config['guilds'].keys()):
+
+        guild_uuid = config['guilds'][guild]["guild_uuid"]
+
+        try:
+                # fetch guild members
+                async with aiohttp.ClientSession() as session:
+                    res = await session.get(f"https://api.hypixel.net/guild?id={guild_uuid}&key={api_key}")
+
+                    assert res.status == 200
+
+                    data = await res.json()
+                    guild_members = data["guild"]["members"]
+
+        except AssertionError:
+            await cache.get_guild(config['server_id']) \
+            .get_channel(config['bot_log_channel_id']) \
+            .send(f"Guild info fetch with id `{config['guilds'][guild]['guild_uuid']}` "
+                          "did not return a 200.")
+            continue
+        
+        except Exception as exception:
+            await cache.get_guild(config['server_id']) \
+            .get_channel(config['bot_log_channel_id']) \
+                    .send(exception_to_string('check_verified task', exception))
+            continue
+        
+        
+        await cursor.execute(f'''
+            SELECT *
+            FROM "USERS"
+            WHERE guild_uuid=:guild_uuid
+        ''', {
+                "guild_uuid": guild_uuid
+        })
+        
+        members = await cursor.fetchall()
+
+        for member in members:
+            member = convert_to_user(member)
+
+            if not any(g_member['uuid'] == member['uuid'] for g_member in guild_members):
+                discord_member = await cache.get_guild(config['server_id']) \
+                .get_member(member['discord_id'])
+
+                if discord_member:
+                    for role in config['verify']['guild_member_roles']:
+                        role = await cache.get_guild(config["server_id"]) \
+                        .get_role(role)
+                        await discord_member.remove_role(role)
+                    
+                    role = await cache.get_guild(config["server_id"]) \
+                    .get_role(config['verify']['member_role_id'])
+                    await discord_member.remove_role(role)
+                    uuids = uuids + (member['uuid'],)
+
+    await cursor.execute(f'''
+        UPDATE "USERS"
+            SET "guild_uuid"=NULL
+            WHERE "uuid" IN ({', '.join(uuid for uuid in uuids)})
+        ''')
+                    
+                
+    await cursor.close()
+    await db.commit()
+
+
+
+
+@component.with_schedule
+@tanjun.as_interval(datetime.timedelta(hours=12))
+async def inactives_check(db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection),
+                         cache: hikari.api.Cache = alluka.inject(type=hikari.api.Cache),
+                         config: Config = alluka.inject(type=Config)):
+    
+    try:
+        await db.execute(f'''
+            UPDATE "USERS"
+            SET inactive_until=null
+            WHERE inactive_until<{int(datetime.datetime.time())}
+        ''')
+        await db.commit()
+    except Exception as exception:
+        await cache.get_guild(config["server_id"]) \
+        .get_channel(config['bot_log_channel_id']) \
+        .send(exception_to_string('inactives_check task', exception))
+
+
+    
 
 
 @tanjun.as_loader()

@@ -134,7 +134,7 @@ async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
     if len(suggestion) > 500:
         embed = hikari.Embed(
             title='Error',
-            description='Suggestion can\'t be longer than 500 character',
+            description='Suggestion can\'t be longer than 500 characters',
             color=config['colors']['error']
         )
         await ctx.respond(embed=embed)
