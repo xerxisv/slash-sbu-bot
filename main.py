@@ -28,6 +28,9 @@ config = ConfigHandler().get_config()
 asyncio.run(DBConnection().connect_db())
 
 from utils.handlers import is_warn, handle_warn
+from components.triggers import TriggersFileHandler
+
+trigger_handler = TriggersFileHandler()
 
 ###############
 #    Hooks    #
@@ -56,7 +59,6 @@ command_usage = {
     "skycrypt": "+s <ign> [profile]",
     # verify
     "verify": "+verify <ign>",
-    "forceverify": "+forceverify <ign> <member>",
     # suggestions
     "suggest": "+suggest <your_suggestion>"
 }
@@ -151,6 +153,8 @@ async def on_started(_) -> None:
 async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
     if is_warn(event.message.content):
         await handle_warn(event)
+    if trigger_handler.is_trigger(event.message.content):
+        await trigger_handler.handle_trigger(event)
 
 
 if __name__ == "__main__":
