@@ -1,0 +1,140 @@
+{
+    "logo_url": null,
+    "server_id": 0,
+
+    "jr_mod_role_id": 0,
+    "mod_role_id": 0,
+    "admin_role_id": 0,
+    "jr_admin_role_id": 0,
+    "co_owner_role_id": 0,
+    "owner_role_id": 0,
+
+    "mod_chat_channel_id": 0,
+    "admin_chat_channel_id": 0,
+    "bot_log_channel_id": 0,
+
+    "guilds": {
+        "guild name": {
+            "member_role_id": 0,
+            "guild_uuid": "",
+            "bridge_uuid": "",
+            "member_count_channel_id": 0
+        }
+    },
+
+    "verify": {
+        "guild_member_roles": [
+            0,
+            0
+        ],
+        "member_role_id": 0,
+        "verified_role_id": 0
+    },
+
+    "colors": {
+        "success": 0,
+        "error": 0,
+        "primary": 0,
+        "secondary": 0
+    },
+
+    "modules": {
+        "banlist": false,
+        "crisis": false,
+        "files": false,
+        "gtatsu": false,
+        "helper_academy": false,
+        "inactives": false,
+        "masters": false,
+        "misc": false,
+        "moderation": false,
+        "qotd": false,
+        "rep": false,
+        "stats": false,
+        "suggestions": false,
+        "tasks": false,
+        "triggers": false,
+        "verify": false
+    },
+
+    "banlist": {
+        "channel_id": 0
+    },
+
+    "crisis": {
+        "ignored_categories": [],
+        "ignored_roles": [],
+        "ticket_channels": [],
+        "everyone_role_id": 0
+    },
+
+    "files": {
+        "allowed_category": 0
+    },
+
+    "gtatsu": {
+        "bridge_bot_ids": [],
+        "bridge_channel_ids": [],
+        "top_active_role_id": 0
+    },
+
+    "helper_academy": {
+        "ticket_commands_channel_id": 0
+    },
+
+    "misc": {
+        "allowed_role_id": 0
+    },
+
+    "moderation": {
+        "action_log_channel_id": 0,
+        "appeals_invite": ""
+    },
+
+    "rep": {
+        "rep_log_channel_id": 0
+    },
+
+    "stats": {
+        "weight_banned_role_id": 0,
+        "default_weight_role_id": 0,
+        "weight_roles": {
+            "weight role 1": {
+                "role_id": 0,
+                "weight_req": 0,
+                "name": "",
+                "previous": []
+            },
+            "weight role 2": {
+                "role_id": 0,
+                "weight_req": 0,
+                "name": "",
+                "previous": [0]
+            }
+        }
+    },
+
+    "suggestions": {
+        "suggestions_channel_id": 0
+    },
+
+    "tasks": {
+        "activated": {
+            "update_member_count": false,
+            "backup_db": false,
+            "booster_log": false
+        },
+        "total_members_channel_id": 0,
+        "booster_role_id": 0,
+        "booster_log_channel_id": 0
+    },
+
+    "qotd": {
+        "qotd_channel_id": 0,
+        "qotd_role_id": 0
+    },
+    "info": {
+        "info_channel_id": 0
+    }
+
+}
