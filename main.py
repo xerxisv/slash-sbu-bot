@@ -31,6 +31,7 @@ from utils.handlers import is_warn, handle_warn
 from components.triggers import TriggersFileHandler
 
 trigger_handler = TriggersFileHandler()
+trigger_handler.load_triggers()
 
 ###############
 #    Hooks    #
@@ -151,6 +152,8 @@ async def on_started(_) -> None:
 
 @bot.listen(hikari.GuildMessageCreateEvent)
 async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
+    if event.member.is_bot or event.message.content is None:
+        return
     if is_warn(event.message.content):
         await handle_warn(event)
     if trigger_handler.is_trigger(event.message.content):

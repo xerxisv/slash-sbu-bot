@@ -195,7 +195,7 @@ class TriggersFileHandler:
             return
 
         reply = trigger['reply'] if type(trigger['reply']) is str else choice(trigger['reply'])
-        await event.message.reply(reply)
+        await event.message.respond(reply)
 
     def is_trigger(self, msg: str) -> bool:
         return msg.upper() in self._triggers.keys()
