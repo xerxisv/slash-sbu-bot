@@ -158,6 +158,15 @@ async def user_info(ctx: tanjun.abc.Context, user: hikari.User, player_info: Pla
 
     if user['guild_uuid']:
         res = await get(f"https://api.slothpixel.me/api/guilds/id/{user['guild_uuid']}")
+        if res.status != 200:
+            embed = hikari.Embed(
+                title=f'Error',
+                description='Something went wrong. Please try again later',
+                color=config['colors']['error']
+            )
+            await ctx.respond(embed=embed)
+            return
+
         data = await res.json()
         if data['guild']:
             embed.add_field(name="Guild", value=data['name'])
