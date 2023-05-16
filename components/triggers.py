@@ -17,40 +17,6 @@ component = tanjun.Component()
 ct_slash_group = tanjun.slash_command_group("trigger", "Commands related to chat triggers")
 
 
-@ct_slash_group.as_sub_command("help", "help")
-async def help(ctx: tanjun.abc.MessageContext, config: Config = alluka.inject(type=Config)):
-    help_embed = hikari.Embed(
-        title='Command Help',
-        color=config['colors']['primary']
-    )
-
-    help_embed.add_field(name='Create a new trigger.',
-                         value='`+trigger create <trigger> | <owner_id> | <response>`\n'
-                               '*For multiple owners put the IDs inside brackets, separated by semicolons.*\n'
-                               '*For random responses put the responses inside brackets, separated by semicolons.*\n'
-                               'E.g., \n'
-                               '*`+trigger add hehe | [123; 456] | [xd; hehe]`*',
-                         inline=False)
-    help_embed.add_field(name='Remove a trigger',
-                         value='`+trigger remove <trigger>`',
-                         inline=False)
-    help_embed.add_field(name='Replace a trigger',
-                         value='`+trigger replace <trigger> | <owner_id> | <response>`\n'
-                               '*Same format as create*\n'
-                               '*Replaced triggers cannot be restored. Use with caution*')
-    help_embed.add_field(name='Enable or disable a trigger',
-                         value='`+trigger toggle <trigger>`',
-                         inline=False)
-    help_embed.add_field(name='Lists triggers',
-                         value='`+trigger list [page]`',
-                         inline=False)
-    help_embed.add_field(name='Command aliases list',
-                         value='`+trigger alias`',
-                         inline=False)
-
-    await ctx.respond(embed=help_embed)
-
-
 @tanjun.with_check(jr_admin_check, follow_wrapped=True)
 @tanjun.with_str_slash_option("response5", "Other possible trigger responses", default=None, key='response5')
 @tanjun.with_str_slash_option("response4", "Other possible trigger responses", default=None, key='response4')
