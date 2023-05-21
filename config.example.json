@@ -82,6 +82,19 @@
         "ticket_commands_channel_id": 0
     },
 
+    "masters": {
+        "main": {
+            "weight": 4200,
+            "dungeon_lvl": 30,
+            "slayer_xp": 1000000
+        },
+        "jr": {
+            "weight": 4200,
+            "dungeon_lvl": 30,
+            "slayer_xp": 1000000
+        }
+    },
+
     "misc": {
         "allowed_role_id": 0
     },

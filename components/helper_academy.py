@@ -4,7 +4,6 @@ import alluka
 import hikari
 import tanjun
 
-from utils.checks.role_checks import mod_check
 from utils.config import Config, ConfigHandler
 
 ################
@@ -30,7 +29,8 @@ lookup = {
 component = tanjun.Component()
 
 
-@tanjun.as_slash_command("lookup_section", "Posts look up examples for Helper Academy", default_member_permissions=hikari.Permissions.BAN_MEMBERS)
+@tanjun.as_slash_command("lookup_section", "Posts look-up examples for Helper Academy",
+                         default_member_permissions=hikari.Permissions.BAN_MEMBERS)
 async def lookup_section(ctx: tanjun.abc.SlashContext,
                          config: Config = alluka.inject(type=Config)):
     length = len(lookup)

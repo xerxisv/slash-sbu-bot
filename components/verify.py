@@ -29,6 +29,7 @@ component = tanjun.Component()
 
 
 @component.with_command(follow_wrapped=True)
+@tanjun.with_check(jr_mod_check)
 @tanjun.with_cooldown("api_commands", follow_wrapped=True)
 @tanjun.with_concurrency_limit("database_commands", follow_wrapped=True)
 @tanjun.annotations.with_annotated_args(follow_wrapped=True)
@@ -42,11 +43,11 @@ async def verify(ctx: tanjun.abc.Context, ign: Annotated[tanjun.annotations.Str,
 
 
 @component.with_command()
-@tanjun.with_check(jr_mod_check)
 @tanjun.with_cooldown("api_commands")
 @tanjun.with_concurrency_limit("database_commands")
 @tanjun.annotations.with_annotated_args()
-@tanjun.as_slash_command('force-verify', 'Command to force link a discord account')
+@tanjun.as_slash_command('force-verify', 'Force link a hypixel account', default_to_ephemeral=True,
+                         default_member_permissions=hikari.Permissions.MUTE_MEMBERS)
 async def force_verify(ctx: tanjun.abc.Context, member: Annotated[tanjun.annotations.Member, "The member"],
                        ign: Annotated[tanjun.annotations.Str, "The IGN"],
                        config: Config = alluka.inject(type=Config),
@@ -96,7 +97,7 @@ async def unverify(ctx: tanjun.abc.Context,
 @tanjun.with_check(jr_mod_check, follow_wrapped=True)
 @tanjun.with_str_slash_option('ign', 'The user\'s IGN', key='player_info', default=None, converters=to_player_info)
 @tanjun.with_user_slash_option('user', 'The user', default=None)
-@tanjun.as_slash_command('user_info', 'Returns the info of the given user stored in the database.',
+@tanjun.as_slash_command('user_info', 'Returns the info of the given user stored in the database',
                          default_member_permissions=hikari.Permissions.MUTE_MEMBERS)
 async def user_info(ctx: tanjun.abc.Context, user: hikari.User, player_info: PlayerInfo,
                     config: Config = alluka.inject(type=Config),
@@ -241,8 +242,8 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
                 title=f'Error',
                 description='The discord linked with your hypixel account is not the same as the one you are '
                             'trying to verify with.\n'
-                            f'Linked one: `{player["socialMedia"]["links"]["DISCORD"]}`'
-                            f'Current one: `{player["socialMedia"]["links"]["DISCORD"]}`'
+                            f'Your tag: `{str(member)}`\n'
+                            f'Linked tag: `{player["socialMedia"]["links"]["DISCORD"]}`\n'
                             'You can connect your discord following https://youtu.be/6ZXaZ-chzWI',
                 color=config['colors']['error']
             )

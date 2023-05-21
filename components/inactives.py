@@ -1,3 +1,4 @@
+# TODO create button on inactive check that sends a txt with the kick commands ready
 import os
 import time
 from typing import Annotated
@@ -33,46 +34,20 @@ guild_choices = Annotated[tanjun.annotations.Str, "Guild name", tanjun.annotatio
 ################
 
 component = tanjun.Component()
+
 inactive_group = tanjun.SlashCommandGroup("inactive", "Inactivity checks and inactivity list editing")
-inactive_force_group = inactive_group.make_sub_group("force", "Force add/remove a player from inactivity list")
+
+inactive_group_perms = tanjun.SlashCommandGroup("inactive", "Inactivity checks and inactivity list editing",
+                                                default_member_permissions=hikari.Permissions.MUTE_MEMBERS)
+inactive_force_group = inactive_group_perms.make_sub_group("force", "Force add/remove a player from inactivity list")
+
 component.add_slash_command(inactive_group)
 
 
-@inactive_group.as_sub_command("help", "Shows available commands")
-async def inactive_help(ctx: tanjun.abc.SlashContext):
-    embed = hikari.Embed(
-        title='Command Help',
-        color=config['colors']['primary']
-    )
-
-    embed.add_field(name='Add yourself to the inactivity list',
-                    value='</inactive add:1085007238202134579>\n'
-                          '*You need to be __verified__*',
-                    inline=False)
-    embed.add_field(name='Check the inactive players in a guild',
-                    value='</inactive check:1085007238202134579>\n'
-                          '*__Junior Moderator__ command*',
-                    inline=False)
-    embed.add_field(name='List the users with an inactivity notice',
-                    value='</inactive list:1085007238202134579>\n'
-                          '*__Junior Moderator__ command*')
-    embed.add_field(name='Add a player to the inactivity list',
-                    value='</inactive force add:1085007238202134579>\n'
-                          '*__Junior Moderator__ command*',
-                    inline=False)
-    embed.add_field(name='Remove a player from the inactivity list',
-                    value='</inactive force remove:1085007238202134579>\n'
-                          '*__Junior Moderator__ command*',
-                    inline=False)
-
-    await ctx.respond(embed=embed)
-
-
-@tanjun.with_check(jr_mod_check)
 @tanjun.with_cooldown("api_commands")
 @tanjun.annotations.with_annotated_args()
 @tanjun.with_concurrency_limit("database_commands")
-@inactive_group.as_sub_command("check", "Checks for inactive players in a given guild")
+@inactive_group_perms.as_sub_command("check", "Checks for inactive players in a given guild")
 async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
                          db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     await trigger_typing(ctx)
@@ -202,8 +177,7 @@ async def inactive_add(ctx: tanjun.abc.SlashContext,
     await ctx.respond(embed=embed)
 
 
-@tanjun.with_check(jr_mod_check)
-@inactive_group.as_sub_command("list", "Lists all the users with an inactivity notice")
+@inactive_group_perms.as_sub_command("list", "Lists all the users with an inactivity notice")
 async def inactive_list(ctx: tanjun.abc.SlashContext,
                         db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     cursor: aiosqlite.Cursor

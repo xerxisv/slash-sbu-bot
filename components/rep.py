@@ -17,15 +17,19 @@ from utils.error_utils import log_error
 ################
 
 component = tanjun.Component()
-command_group = tanjun.slash_command_group('rep', 'Reputation commands', default_to_ephemeral=True)
-component.add_slash_command(command_group)
+
+rep_slash_group = tanjun.slash_command_group('rep', 'Reputation commands', default_to_ephemeral=True)
+rep_slash_group_perms = tanjun.slash_command_group('rep', 'Reputation commands', default_to_ephemeral=True,
+                                                   default_member_permissions=hikari.Permissions.MANAGE_ROLES)
+
+component.add_slash_command(rep_slash_group)
 
 
 @tanjun.with_bool_slash_option('collateral', 'Was collateral given?')
 @tanjun.with_str_slash_option('value', 'Approximate value of items')
 @tanjun.with_str_slash_option('comments', 'Brief description of the exchange')
 @tanjun.with_member_slash_option('receiver', 'The user to give rep to')
-@command_group.as_sub_command('give', 'Give reputation to a user', always_defer=True)
+@rep_slash_group.as_sub_command('give', 'Give reputation to a user', always_defer=True)
 async def rep_give(ctx: tanjun.abc.SlashContext, receiver: hikari.Member, comments: str, value: str, collateral: str,
                    config: Config = alluka.inject(type=Config),
                    db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
@@ -97,9 +101,8 @@ async def rep_give(ctx: tanjun.abc.SlashContext, receiver: hikari.Member, commen
     await ctx.respond(embed=embed)
 
 
-@tanjun.with_check(jr_admin_check)
 @tanjun.with_int_slash_option('rep_id', 'The ID of the rep to remove')
-@command_group.as_sub_command('remove', 'Removes a rep from the database', always_defer=True)
+@rep_slash_group_perms.as_sub_command('remove', 'Removes a rep from the database', always_defer=True)
 async def rep_remove(ctx: tanjun.abc.SlashContext, rep_id: int,
                      config: Config = alluka.inject(type=Config),
                      db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
@@ -156,10 +159,9 @@ async def rep_remove(ctx: tanjun.abc.SlashContext, rep_id: int,
         await ctx.respond(embed=embed)
 
 
-@tanjun.with_author_permission_check(hikari.Permissions.MANAGE_ROLES)
 @tanjun.with_int_slash_option('page', 'The page of the list. Each page contains 10 reps', default=1)
 @tanjun.with_user_slash_option('user', 'The user to list reps for')
-@command_group.as_sub_command('list', 'Lists the reps the user has received', always_defer=True)
+@rep_slash_group.as_sub_command('list', 'Lists the reps the user has received', always_defer=True)
 async def rep_list(ctx: tanjun.abc.SlashContext, user: hikari.User, page: int,
                    config: Config = alluka.inject(type=Config),
                    db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):

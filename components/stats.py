@@ -161,7 +161,7 @@ async def skycrypt(ctx: tanjun.abc.MessageContext, ign: str, profile: str = None
 @component.with_command()
 @tanjun.with_concurrency_limit("database_commands")
 @tanjun.with_all_checks(weight_banned_check, registered_check)
-@tanjun.with_str_slash_option('profile', 'Profile name', key='cute_name', choices=profile_choices, default=None)
+@tanjun.with_str_slash_option('profile', 'Profile name. NOT YOUR IGN', key='cute_name', choices=profile_choices, default=None)
 @tanjun.as_slash_command('weight_check', 'Gives weight roles')
 async def weight_check(ctx: tanjun.abc.SlashContext, cute_name: str,
                        config: Config = alluka.inject(type=Config),

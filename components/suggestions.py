@@ -265,7 +265,7 @@ async def suggestion_delete(ctx: tanjun.abc.SlashContext, suggestion_id: int,
 @tanjun.with_bool_slash_option('approved', 'Lists approved/denied suggestion', default=None)
 @tanjun.with_bool_slash_option('answered', 'Lists answered/unanswered suggestions', default=None)
 @tanjun.with_user_slash_option('author', 'The author of the suggestion', default=None)
-@suggestion_group.as_sub_command('list', 'Lists suggestions. Only one filter can be used at a time')
+@suggestion_group.as_sub_command('list', 'Lists suggestions')
 async def suggestion_list(ctx: tanjun.abc.SlashContext, author: hikari.User, answered: bool, approved: bool,
                             config: Config = alluka.inject(type=Config),
                             db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):

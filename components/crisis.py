@@ -184,7 +184,8 @@ async def restore_text_channels(ctx: tanjun.abc.Context):
 
 component = tanjun.Component()
 
-crisis_slash_group = tanjun.slash_command_group("crisis", "Channel lockdown commands", default_member_permissions=hikari.Permissions.MANAGE_ROLES)
+crisis_slash_group = tanjun.slash_command_group("crisis", "Channel lockdown commands",
+                                                default_member_permissions=hikari.Permissions.MANAGE_ROLES)
 crisis_list_slash_group = crisis_slash_group.make_sub_group("list", "Debug info regarding an ongoing crisis")
 
 component.add_check(jr_admin_check)
@@ -418,7 +419,7 @@ async def crisis_list_changes(ctx: tanjun.abc.Context):
 
 
 @crisis_list.as_sub_command("errors")
-@crisis_list_slash_group.as_sub_command("errors", "Lists errors raised during the crisis")
+@crisis_list_slash_group.as_sub_command("errors", "Lists errors raised during the crisis initialization")
 async def crisis_list_errors(ctx: tanjun.abc.Context):
     errors_string = 'Errors:\n'
 

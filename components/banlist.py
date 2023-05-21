@@ -18,6 +18,7 @@ from utils.database import BannedMemberInfo, DBConnection, convert_to_banned
 
 component = tanjun.Component()
 
+bl_slash_group_perms = tanjun.slash_command_group("banlist", "Commands related to our ban list", default_member_permissions=hikari.Permissions.BAN_MEMBERS)
 bl_slash_group = tanjun.slash_command_group("banlist", "Commands related to our ban list")
 
 component.with_command(bl_slash_group)
@@ -37,10 +38,6 @@ async def help(ctx: tanjun.abc.MessageContext, config: Config = alluka.inject(ty
     )
 
     help_embed.add_field(name='Check if a user if banned', value='`+banlist check <IGN>`')
-    help_embed.add_field(name=f'Add a user to banned-list',
-                         value='`+banlist add <IGN> [reason]`\n*__Moderator__ command.*', inline=False)
-    help_embed.add_field(name=f'Remove a user from banned-list',
-                         value='`+banlist remove <IGN>`\n*__Moderator__ command.*', inline=False)
     help_embed.add_field(name='List all info related to the ban of the user',
                          value='`+banlist info <IGN>`\n*__Moderator__ command.*', inline=False)
     help_embed.add_field(name='Command aliases list', value='`+banlist aliases`', inline=False)
@@ -50,13 +47,15 @@ async def help(ctx: tanjun.abc.MessageContext, config: Config = alluka.inject(ty
 @tanjun.with_concurrency_limit("database_commands", follow_wrapped=True)
 @tanjun.annotations.with_annotated_args(follow_wrapped=True)
 @tanjun.with_check(mod_check, follow_wrapped=True)
+# prefix options
 @tanjun.with_argument('player_info', converters=to_player_info)
 @bl_msg_group.as_sub_command("add", "a")
+# slash options
 @tanjun.with_str_slash_option("banned_ign", "User's IGN", key='player_info', converters=to_player_info)
-@bl_slash_group.as_sub_command("add", "Adds a user to the ban list")
+@bl_slash_group_perms.as_sub_command("add", "Adds a user to the ban list")
 async def add(ctx: tanjun.abc.Context,
               player_info: PlayerInfo,
-              reason: Annotated[tanjun.annotations.Str, "User's IGN"],
+              reason: Annotated[tanjun.annotations.Str, "Ban reason"],
               config: Config = alluka.inject(type=Config),
               db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     await trigger_typing(ctx)
@@ -159,7 +158,7 @@ async def check(ctx: tanjun.abc.Context, player_info: PlayerInfo,
 @tanjun.with_argument('player_info', converters=to_player_info)
 @bl_msg_group.as_sub_command("remove", "r", "rm", "delete", "del")
 @tanjun.with_str_slash_option("banned_ign", "User's IGN", key='player_info', converters=to_player_info)
-@bl_slash_group.as_sub_command("remove", "Remove a user from our ban list")
+@bl_slash_group_perms.as_sub_command("remove", "Remove a user from our ban list")
 async def remove(ctx: tanjun.abc.Context, player_info: PlayerInfo,
                  config: Config = alluka.inject(type=Config),
                  db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):

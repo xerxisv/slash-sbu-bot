@@ -1,4 +1,6 @@
+# TODO create trigger list command
 # TODO add autocomplete to trigger remove
+
 import json
 import re
 from random import choice
@@ -10,14 +12,17 @@ import hikari.api.cache
 import tanjun
 
 from utils import trigger_typing
-from utils.checks.role_checks import jr_admin_check
 from utils.config import Config, ConfigHandler
 
+################
+#   Commands   #
+################
+
 component = tanjun.Component()
-ct_slash_group = tanjun.slash_command_group("trigger", "Commands related to chat triggers")
+ct_slash_group = tanjun.slash_command_group("trigger", "Commands related to chat triggers",
+                                            default_member_permissions=hikari.Permissions.MANAGE_ROLES)
 
 
-@tanjun.with_check(jr_admin_check, follow_wrapped=True)
 @tanjun.with_str_slash_option("response5", "Other possible trigger responses", default=None, key='response5')
 @tanjun.with_str_slash_option("response4", "Other possible trigger responses", default=None, key='response4')
 @tanjun.with_str_slash_option("response3", "Other possible trigger responses", default=None, key='response3')
@@ -35,7 +40,6 @@ async def add(ctx: tanjun.abc.SlashContext, trigger: str, user1: hikari.Member, 
               user2: hikari.Member, user3: hikari.Member, user4: hikari.Member, user5: hikari.Member,
               response2: str, response3: str, response4: str, response5: str,
               config: Config = alluka.inject(type=Config)):
-
     await trigger_typing(ctx)
 
     args = locals()
@@ -72,8 +76,7 @@ async def add(ctx: tanjun.abc.SlashContext, trigger: str, user1: hikari.Member, 
         await ctx.respond(embed=embed)
 
 
-@tanjun.with_check(jr_admin_check, follow_wrapped=True)
-@tanjun.with_str_slash_option("trigger", "Phrase that will trigger a response")
+@tanjun.with_str_slash_option("trigger", "The trigger to remove")
 @ct_slash_group.as_sub_command("remove", "Remove a chat trigger")
 async def remove(ctx: tanjun.abc.Context,
                  trigger: str,

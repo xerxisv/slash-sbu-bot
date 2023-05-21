@@ -19,7 +19,7 @@ component = tanjun.Component()
 
 
 @tanjun.with_check(mod_check, follow_wrapped=True)
-# message options
+# prefix options
 @tanjun.with_greedy_argument('reason')
 @tanjun.with_option('dm', '--dm', converters=tanjun.conversion.to_bool, default=True, empty_value=True)
 @tanjun.with_argument('user', converters=tanjun.conversion.to_user)
@@ -82,9 +82,11 @@ async def ban(ctx: tanjun.abc.Context, user: hikari.User, reason: str, dm: bool 
 
 
 @tanjun.with_check(mod_check, follow_wrapped=True)
+# prefix options
 @tanjun.with_greedy_argument('reason', default=None)
 @tanjun.annotations.with_annotated_args(follow_wrapped=True)
 @tanjun.as_message_command('unban')
+# prefix options
 @tanjun.with_str_slash_option('reason', 'Reason for unbanning the user', default=None)
 @tanjun.as_slash_command('unban', 'Unbans the given user', default_member_permissions=hikari.Permissions.BAN_MEMBERS)
 async def unban(ctx: tanjun.abc.Context,
@@ -123,9 +125,11 @@ async def unban(ctx: tanjun.abc.Context,
 
 @tanjun.with_check(jr_mod_check, follow_wrapped=True)
 @tanjun.with_greedy_argument('reason', default=None)
+# prefix options
 @tanjun.with_argument('time', converters=to_timestamp, default='24h')
 @tanjun.with_argument('member', converters=tanjun.conversion.to_member)
 @tanjun.as_message_command('mute')
+# prefix options
 @tanjun.with_str_slash_option('reason', 'Reason for muting the user', default=None)
 @tanjun.with_str_slash_option('time', 'The amount of time to mute for (default: 24h)', converters=to_timestamp,
                               default='24h')
@@ -171,9 +175,11 @@ async def mute(ctx: tanjun.abc.Context, member: hikari.Member, time: int, reason
 
 
 @tanjun.with_check(jr_mod_check, follow_wrapped=True)
+# prefix options
 @tanjun.with_greedy_argument('reason', default=None)
 @tanjun.with_argument('member', converters=tanjun.conversion.to_member)
 @tanjun.as_message_command('unmute')
+# prefix options
 @tanjun.with_str_slash_option('reason', 'Reason for muting the user', default=None)
 @tanjun.with_member_slash_option('user', 'The user to unmute', key='member')
 @tanjun.as_slash_command('unmute', 'Unmutes the given user', default_member_permissions=hikari.Permissions.MUTE_MEMBERS)
