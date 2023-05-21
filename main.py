@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 from utils.config.config import Config, ConfigHandler
 from utils.database.connection import DBConnection
 
-
 #######################
 #    General Setup    #
 #######################
@@ -22,7 +21,7 @@ from utils.database.connection import DBConnection
 colorama.init(autoreset=True)
 load_dotenv()
 
-ConfigHandler().load_config()
+asyncio.run(ConfigHandler().load_config())
 config = ConfigHandler().get_config()
 
 asyncio.run(DBConnection().connect_db())
@@ -138,7 +137,6 @@ client.set_type_dependency(aiosqlite.Connection, DBConnection().get_db())
 client.set_type_dependency(Config, ConfigHandler().get_config())
 
 miru.install(bot)
-
 
 
 ###################

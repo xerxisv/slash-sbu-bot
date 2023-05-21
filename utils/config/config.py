@@ -3,6 +3,8 @@ from typing import TypedDict
 
 from utils import Singleton
 
+import aiofiles
+
 
 class BanList(TypedDict):
     channel_id: int
@@ -41,6 +43,16 @@ class GTatsu(TypedDict):
 
 class HelperAcademy(TypedDict):
     ticket_commands_channel_id: int
+
+
+class Requirements(TypedDict):
+    weight: int
+    dungeon_lvl: int
+    slayer_xp: int
+
+class Masters(TypedDict):
+    main: Requirements
+    jr: Requirements
 
 
 class Misc(TypedDict):
@@ -124,6 +136,7 @@ class Config(TypedDict, total=False):
     files: Files
     gtatsu: GTatsu
     helper_academy: HelperAcademy
+    masters: Masters
     misc: Misc
     moderation: Moderation
     rep: Rep
@@ -144,6 +157,21 @@ class ConfigHandler(metaclass=Singleton):
     def get_config(self) -> Config:
         return self.__config
 
-    def load_config(self) -> None:
-        with open(self.config_file_path, mode='r') as f:
-            self.__config = json.loads(f.read())
+    async def load_config(self) -> None:
+        async with aiofiles.open(self.config_file_path, mode='r') as f:
+            self.__config = json.loads(await f.read())
+
+    async def save_config(self) -> None:
+        async with aiofiles.open(self.config_file_path, mode='w') as f:
+            await f.write(json.dumps(self.__config))
+
+    async def set_val(self, keys: list[str], val):
+        data = self.__config
+        last_key = keys[-1]
+
+        for k in keys[:-1]:
+            data = data[k]
+        data[last_key] = val
+
+        await ConfigHandler().save_config()
+        await ConfigHandler().load_config()
