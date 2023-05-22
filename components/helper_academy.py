@@ -12,12 +12,12 @@ from utils.config import Config, ConfigHandler
 
 # True stands for scammer - False stands for not scammer
 lookup = {
-    "shachi": True, "Rvon": True, "Fijit": False, "someonestolemypc": True, "jpgaming55": True, "LordZarach": False,
+    "shachi": True, "Rvon": True, "SleepyBestLegit": False, "someonestolemypc": True, "jpgaming55": True, "LordZarach": False,
     'Skeldow': True, 'StopWipingMe': True, 'LavenderHeights': True, 'MartinNemi03': False, '69mn': True,
     'zStrelizia': True, 'Adviceful': True, 'Zykm': True, 'muffinio': True, 'spedwick': True, 'FantasmicGalaxy': False,
     'urra': True, 'Iwolf05': True, 'noscope_': True, 'luvanion': True, 'KSavvv18': True, '43110s': True,
-    'dukioooo': False, 'CoruptKun': True, 'Teunman': True, '302q': True, 'Tera_Matt': True, 'jexh': False,
-    'Royalist': True, 'McMuffinLover': True, 'o600': False, 'jjww2': False, 'UnityUWU': True, 'LeaPhant': False,
+    'dukioooo': False, 'CoruptKun': True, 'Teunman': True, '302q': True, 'Tera_Matt': False, 'jexh': False,
+    'Royalist': True, 'McMuffinLover': True, 'o600': False, 'jjww2': False, 'kanimetv': True, 'LeaPhant': False,
     'Zanjoe': True, 'Yarnzy_': True, 'ih8grinding': True, 'Verychillvibes': True, 'LesbianCatgirl': False,
     'Legendofhub': True, 'Spectrov': True, '_YungGravy': False, 'wigner': True, 'U4BJ': True
 }
