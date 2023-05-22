@@ -4,6 +4,7 @@ from typing import Annotated
 import alluka
 import hikari
 import tanjun
+from hikari import undefined
 
 from utils import trigger_typing
 from utils.checks.role_checks import jr_mod_check, mod_check
@@ -20,7 +21,7 @@ component = tanjun.Component()
 
 @tanjun.with_check(mod_check, follow_wrapped=True)
 # prefix options
-@tanjun.with_greedy_argument('reason')
+@tanjun.with_greedy_argument('reason', default=None)
 @tanjun.with_option('dm', '--dm', converters=tanjun.conversion.to_bool, default=True, empty_value=True)
 @tanjun.with_argument('user', converters=tanjun.conversion.to_user)
 @tanjun.as_message_command('ban')
@@ -49,7 +50,7 @@ async def ban(ctx: tanjun.abc.Context, user: hikari.User, reason: str, dm: bool 
             successful_dm = True
 
     try:
-        await ctx.get_guild().ban(user.id, reason=reason)
+        await ctx.get_guild().ban(user.id, reason=reason if reason else undefined.UNDEFINED)
     except hikari.NotFoundError:
         await ctx.respond(f'User {user} not found.')
         return
@@ -72,11 +73,11 @@ async def ban(ctx: tanjun.abc.Context, user: hikari.User, reason: str, dm: bool 
             successful_log = True
 
     embed = hikari.Embed(
-        description=f"{user} was banned.\n"
-                    f"*Reason*: `{reason}`\n\n"
+        description=f"{user} was banned.\n\n"
+                    f"*Reason*: `{reason}`\n"
                     f"*DM?*: {'✅' if successful_dm else '❌'}\n"
                     f"*Log?*: {'✅' if successful_log else '❌'}\n",
-        color=config['colors']['secondary']
+        color=config['colors']['success']
     )
     await ctx.respond(embed=embed)
 
@@ -94,9 +95,9 @@ async def unban(ctx: tanjun.abc.Context,
                 reason: str,
                 config: Config = alluka.inject(type=Config)):
     try:
-        await ctx.get_guild().unban(user, reason=reason)
+        await ctx.get_guild().unban(user, reason=reason if reason else undefined.UNDEFINED)
     except hikari.NotFoundError:
-        await ctx.respond(f'User {user} not found.')
+        await ctx.respond(f'User {user} not found or not banned.')
         return
     except Exception as exception:
         await log_error(ctx, exception)
@@ -115,10 +116,10 @@ async def unban(ctx: tanjun.abc.Context,
             successful_log = True
 
     embed = hikari.Embed(
-        description=f"{user} was unbanned.\n"
-                    f"*Reason*: `{reason}`\n\n"
+        description=f"{user} was unbanned.\n\n"
+                    f"*Reason*: `{reason}`\n"
                     f"*Log?*: {'✅' if successful_log else '❌'}\n",
-        color=config['colors']['secondary']
+        color=config['colors']['success']
     )
     await ctx.respond(embed=embed)
 
@@ -126,13 +127,13 @@ async def unban(ctx: tanjun.abc.Context,
 @tanjun.with_check(jr_mod_check, follow_wrapped=True)
 @tanjun.with_greedy_argument('reason', default=None)
 # prefix options
-@tanjun.with_argument('time', converters=to_timestamp, default='24h')
+@tanjun.with_argument('time', converters=to_timestamp, default=86400)
 @tanjun.with_argument('member', converters=tanjun.conversion.to_member)
 @tanjun.as_message_command('mute')
 # prefix options
 @tanjun.with_str_slash_option('reason', 'Reason for muting the user', default=None)
 @tanjun.with_str_slash_option('time', 'The amount of time to mute for (default: 24h)', converters=to_timestamp,
-                              default='24h')
+                              default=86400)
 @tanjun.with_member_slash_option('user', 'The user to mute', key='member')
 @tanjun.as_slash_command('mute', 'Mutes the given user', default_member_permissions=hikari.Permissions.MUTE_MEMBERS)
 async def mute(ctx: tanjun.abc.Context, member: hikari.Member, time: int, reason: str,
@@ -157,15 +158,28 @@ async def mute(ctx: tanjun.abc.Context, member: hikari.Member, time: int, reason
 
     duration = datetime.timedelta(seconds=time)
 
-    await member.edit(communication_disabled_until=datetime.datetime.now() + duration, reason=reason)
-    await ctx.respond(f"{member.mention} has been muted for {duration} | Reason {reason}")
+    await member.edit(communication_disabled_until=datetime.datetime.now() + duration, reason=reason if reason else undefined.UNDEFINED)
 
-    await ctx.get_guild().get_channel(config['moderation']['action_log_channel_id']).send(
-        f"Moderator: <@{ctx.author.id}> \n"
-        f"User: <@{member.id}> \n"
-        f"Action: Mute \n"
-        f"Duration: {duration} \n"
-        f"Reason: {reason}")
+    channel = ctx.get_guild().get_channel(config['moderation']['action_log_channel_id'])
+    log = f"Moderator: <@{ctx.author.id}> \nUser: <@{member.id}> \nAction: Mute \nDuration: {duration} \nReason: {reason}"
+
+    successful_log = False
+    if isinstance(channel, hikari.TextableChannel):
+        try:
+            await channel.send(log)
+        except Exception as exception:
+            await log_error(ctx, exception)
+        else:
+            successful_log = True
+
+    embed = hikari.Embed(
+        description=f"{member} was muted.\n\n"
+                    f"*Reason*: `{reason}`\n"
+                    f"*Duration*: {duration}\n"
+                    f"*Log?*: {'✅' if successful_log else '❌'}\n",
+        color=config['colors']['success']
+    )
+    await ctx.respond(embed=embed)
 
     try:
         await (await member.fetch_dm_channel()).send("You have been muted in Skyblock University.\n\n"
@@ -185,14 +199,27 @@ async def mute(ctx: tanjun.abc.Context, member: hikari.Member, time: int, reason
 @tanjun.as_slash_command('unmute', 'Unmutes the given user', default_member_permissions=hikari.Permissions.MUTE_MEMBERS)
 async def unmute(ctx: tanjun.abc.Context, member: hikari.Member, reason: str,
                  config: Config = alluka.inject(type=Config)):
-    await member.edit(communication_disabled_until=None, reason=reason)
-    await ctx.respond(f"{member.mention} has been unmuted | Reason {reason}")
+    await member.edit(communication_disabled_until=None, reason=reason if reason else undefined.UNDEFINED)
 
-    await ctx.get_guild().get_channel(config['moderation']['action_log_channel_id']).send(
-        f"Moderator: <@{ctx.author.id}> \n"
-        f"User: <@{member.id}> \n"
-        f"Action: Unmute \n"
-        f"Reason: {reason}")
+    channel = ctx.get_guild().get_channel(config['moderation']['action_log_channel_id'])
+    log = f"Moderator: <@{ctx.author.id}> \nUser: <@{member.id}> \nAction: Unmute \nReason: {reason}"
+
+    successful_log = False
+    if isinstance(channel, hikari.TextableChannel):
+        try:
+            await channel.send(log)
+        except Exception as exception:
+            await log_error(ctx, exception)
+        else:
+            successful_log = True
+
+    embed = hikari.Embed(
+        description=f"{member} was unmuted.\n\n"
+                    f"*Reason*: `{reason}`\n"
+                    f"*Log?*: {'✅' if successful_log else '❌'}\n",
+        color=config['colors']['success']
+    )
+    await ctx.respond(embed=embed)
 
 
 component.load_from_scope()
