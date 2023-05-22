@@ -22,6 +22,7 @@ bl_slash_group_perms = tanjun.slash_command_group("banlist", "Commands related t
 bl_slash_group = tanjun.slash_command_group("banlist", "Commands related to our ban list")
 
 component.with_command(bl_slash_group)
+component.with_command(bl_slash_group_perms)
 
 
 @component.with_message_command

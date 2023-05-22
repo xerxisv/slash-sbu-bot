@@ -7,7 +7,6 @@ import alluka
 import hikari
 import tanjun
 
-from utils.checks.role_checks import jr_admin_check
 from utils.config import Config
 from utils.database import convert_to_rep
 from utils.error_utils import log_error
@@ -23,6 +22,7 @@ rep_slash_group_perms = tanjun.slash_command_group('rep', 'Reputation commands',
                                                    default_member_permissions=hikari.Permissions.MANAGE_ROLES)
 
 component.add_slash_command(rep_slash_group)
+component.add_slash_command(rep_slash_group_perms)
 
 
 @tanjun.with_bool_slash_option('collateral', 'Was collateral given?')

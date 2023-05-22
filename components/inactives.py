@@ -42,6 +42,7 @@ inactive_group_perms = tanjun.SlashCommandGroup("inactive", "Inactivity checks a
 inactive_force_group = inactive_group_perms.make_sub_group("force", "Force add/remove a player from inactivity list")
 
 component.add_slash_command(inactive_group)
+component.add_slash_command(inactive_group_perms)
 
 
 @tanjun.with_cooldown("api_commands")

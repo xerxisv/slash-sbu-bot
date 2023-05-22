@@ -9,7 +9,6 @@ import tanjun
 
 from utils import get, trigger_typing
 from utils.checks.db_checks import registered_check
-from utils.checks.role_checks import jr_mod_check
 from utils.config import Config
 from utils.converters import PlayerInfo, to_player_info
 from utils.database import convert_to_user
@@ -29,7 +28,6 @@ component = tanjun.Component()
 
 
 @component.with_command(follow_wrapped=True)
-@tanjun.with_check(jr_mod_check)
 @tanjun.with_cooldown("api_commands", follow_wrapped=True)
 @tanjun.with_concurrency_limit("database_commands", follow_wrapped=True)
 @tanjun.annotations.with_annotated_args(follow_wrapped=True)
@@ -94,7 +92,6 @@ async def unverify(ctx: tanjun.abc.Context,
 
 
 @component.with_command(follow_wrapped=True)
-@tanjun.with_check(jr_mod_check, follow_wrapped=True)
 @tanjun.with_str_slash_option('ign', 'The user\'s IGN', key='player_info', default=None, converters=to_player_info)
 @tanjun.with_user_slash_option('user', 'The user', default=None)
 @tanjun.as_slash_command('user_info', 'Returns the info of the given user stored in the database',
