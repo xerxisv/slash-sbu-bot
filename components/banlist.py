@@ -18,11 +18,9 @@ from utils.database import BannedMemberInfo, DBConnection, convert_to_banned
 
 component = tanjun.Component()
 
-bl_slash_group_perms = tanjun.slash_command_group("banlist", "Commands related to our ban list", default_member_permissions=hikari.Permissions.BAN_MEMBERS)
 bl_slash_group = tanjun.slash_command_group("banlist", "Commands related to our ban list")
 
-component.with_command(bl_slash_group)
-component.with_command(bl_slash_group_perms)
+component.add_command(bl_slash_group)
 
 
 @component.with_message_command
@@ -53,7 +51,7 @@ async def help(ctx: tanjun.abc.MessageContext, config: Config = alluka.inject(ty
 @bl_msg_group.as_sub_command("add", "a")
 # slash options
 @tanjun.with_str_slash_option("banned_ign", "User's IGN", key='player_info', converters=to_player_info)
-@bl_slash_group_perms.as_sub_command("add", "Adds a user to the ban list")
+@bl_slash_group.as_sub_command("add", "Adds a user to the ban list")
 async def add(ctx: tanjun.abc.Context,
               player_info: PlayerInfo,
               reason: Annotated[tanjun.annotations.Str, "Ban reason"],
@@ -159,7 +157,7 @@ async def check(ctx: tanjun.abc.Context, player_info: PlayerInfo,
 @tanjun.with_argument('player_info', converters=to_player_info)
 @bl_msg_group.as_sub_command("remove", "r", "rm", "delete", "del")
 @tanjun.with_str_slash_option("banned_ign", "User's IGN", key='player_info', converters=to_player_info)
-@bl_slash_group_perms.as_sub_command("remove", "Remove a user from our ban list")
+@bl_slash_group.as_sub_command("remove", "Remove a user from our ban list")
 async def remove(ctx: tanjun.abc.Context, player_info: PlayerInfo,
                  config: Config = alluka.inject(type=Config),
                  db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):

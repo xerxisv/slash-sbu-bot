@@ -7,6 +7,7 @@ import alluka
 import hikari
 import tanjun
 
+from utils.checks.role_checks import jr_admin_check
 from utils.config import Config
 from utils.database import convert_to_rep
 from utils.error_utils import log_error
@@ -18,11 +19,8 @@ from utils.error_utils import log_error
 component = tanjun.Component()
 
 rep_slash_group = tanjun.slash_command_group('rep', 'Reputation commands', default_to_ephemeral=True)
-rep_slash_group_perms = tanjun.slash_command_group('rep', 'Reputation commands', default_to_ephemeral=True,
-                                                   default_member_permissions=hikari.Permissions.MANAGE_ROLES)
 
 component.add_slash_command(rep_slash_group)
-component.add_slash_command(rep_slash_group_perms)
 
 
 @tanjun.with_bool_slash_option('collateral', 'Was collateral given?')
@@ -101,8 +99,9 @@ async def rep_give(ctx: tanjun.abc.SlashContext, receiver: hikari.Member, commen
     await ctx.respond(embed=embed)
 
 
+@tanjun.with_check(jr_admin_check)
 @tanjun.with_int_slash_option('rep_id', 'The ID of the rep to remove')
-@rep_slash_group_perms.as_sub_command('remove', 'Removes a rep from the database', always_defer=True)
+@rep_slash_group.as_sub_command('remove', 'Removes a rep from the database', always_defer=True)
 async def rep_remove(ctx: tanjun.abc.SlashContext, rep_id: int,
                      config: Config = alluka.inject(type=Config),
                      db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):

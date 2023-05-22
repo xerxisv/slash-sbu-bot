@@ -36,19 +36,18 @@ guild_choices = Annotated[tanjun.annotations.Str, "Guild name", tanjun.annotatio
 component = tanjun.Component()
 
 inactive_group = tanjun.SlashCommandGroup("inactive", "Inactivity checks and inactivity list editing")
+inactive_force_group = inactive_group.make_sub_group("force", "Force add/remove a player from inactivity list")
 
-inactive_group_perms = tanjun.SlashCommandGroup("inactive", "Inactivity checks and inactivity list editing",
-                                                default_member_permissions=hikari.Permissions.MUTE_MEMBERS)
-inactive_force_group = inactive_group_perms.make_sub_group("force", "Force add/remove a player from inactivity list")
+inactive_force_group.with_check(jr_mod_check)
 
 component.add_slash_command(inactive_group)
-component.add_slash_command(inactive_group_perms)
 
 
 @tanjun.with_cooldown("api_commands")
+@tanjun.with_check(jr_mod_check)
 @tanjun.annotations.with_annotated_args()
 @tanjun.with_concurrency_limit("database_commands")
-@inactive_group_perms.as_sub_command("check", "Checks for inactive players in a given guild")
+@inactive_group.as_sub_command("check", "Checks for inactive players in a given guild")
 async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
                          db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     await trigger_typing(ctx)
@@ -178,7 +177,8 @@ async def inactive_add(ctx: tanjun.abc.SlashContext,
     await ctx.respond(embed=embed)
 
 
-@inactive_group_perms.as_sub_command("list", "Lists all the users with an inactivity notice")
+@tanjun.with_check(jr_mod_check)
+@inactive_group.as_sub_command("list", "Lists all the users with an inactivity notice")
 async def inactive_list(ctx: tanjun.abc.SlashContext,
                         db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     cursor: aiosqlite.Cursor
@@ -214,7 +214,6 @@ async def inactive_list(ctx: tanjun.abc.SlashContext,
     pass
 
 
-@tanjun.with_check(jr_mod_check)
 @tanjun.with_str_slash_option("afk_time", "Approximate afk time", converters=to_timestamp)
 @tanjun.with_str_slash_option("ign", "User's IGN", converters=to_player_info, key='player_info')
 @inactive_force_group.as_sub_command("add", "Adds a user to the inactivity list")
@@ -289,7 +288,6 @@ async def inactive_force_add(ctx: tanjun.abc.SlashContext,
     await ctx.respond(embed=embed)
 
 
-@tanjun.with_check(jr_mod_check)
 @tanjun.with_str_slash_option("ign", "User's IGN", key="player_info", converters=to_player_info)
 @inactive_force_group.as_sub_command("remove", "Removes a user from the inactivity list")
 async def inactive_force_remove(ctx: tanjun.abc.SlashContext, player_info: PlayerInfo,
