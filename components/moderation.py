@@ -33,13 +33,15 @@ component = tanjun.Component()
 async def ban(ctx: tanjun.abc.Context, user: hikari.User, reason: str, dm: bool = True,
               config: Config = alluka.inject(type=Config)):
     await trigger_typing(ctx)
+
     if user.id == ctx.author.id:
-        await ctx.respond('You can\'t ban yourself you potato')
+        await ctx.respond("You can't ban yourself you potato")
+        return
 
     successful_dm = False
     if dm:
         try:
-            ban_dm = f"You have been banned from SBU for `{reason}`\n" \
+            ban_dm = f"You have been banned from SBU for *`{reason if reason else '(No reason given)'}`*\n" \
                      fr"You may appeal in {config['moderation']['appeals_invite']}"
             await (await user.fetch_dm_channel()).send(ban_dm)
         except hikari.ForbiddenError:
@@ -52,7 +54,15 @@ async def ban(ctx: tanjun.abc.Context, user: hikari.User, reason: str, dm: bool 
     try:
         await ctx.get_guild().ban(user.id, reason=reason if reason else undefined.UNDEFINED)
     except hikari.NotFoundError:
-        await ctx.respond(f'User {user} not found.')
+        await ctx.respond(f"User `{user}` not found.")
+        return
+    except hikari.ForbiddenError:
+        embed = hikari.Embed(
+            title="Error",
+            description=f"User `{user}` cannot be banned. (Forbidden)",
+            color=config['colors']['error']
+        )
+        await ctx.respond(embed=embed)
         return
     except Exception as exception:
         await log_error(ctx, exception)
@@ -61,7 +71,7 @@ async def ban(ctx: tanjun.abc.Context, user: hikari.User, reason: str, dm: bool 
     channel = ctx.get_guild().get_channel(config['moderation']['action_log_channel_id'])
     author_id = ctx.author.id
 
-    log = f'Moderator: <@{author_id}>\nUser: <@{user.id}> | {user}\nAction: Ban\nReason: {reason}'
+    log = f"Moderator: <@{author_id}>\nUser: <@{user.id}> | {user}\nAction: Ban\nReason: {reason}"
 
     successful_log = False
     if isinstance(channel, hikari.TextableChannel):
@@ -97,7 +107,7 @@ async def unban(ctx: tanjun.abc.Context,
     try:
         await ctx.get_guild().unban(user, reason=reason if reason else undefined.UNDEFINED)
     except hikari.NotFoundError:
-        await ctx.respond(f'User {user} not found or not banned.')
+        await ctx.respond(f"User {user} not found or not banned.")
         return
     except Exception as exception:
         await log_error(ctx, exception)
@@ -140,8 +150,8 @@ async def mute(ctx: tanjun.abc.Context, member: hikari.Member, time: int, reason
                config: Config = alluka.inject(type=Config)):
     if time > (28 * 86400):
         embed = hikari.Embed(
-            title='Error',
-            description='Max mute duration is 28 days',
+            title="Error",
+            description="Max mute duration is 28 days",
             color=config['colors']['error']
         )
         await ctx.respond(embed=embed)
@@ -149,8 +159,8 @@ async def mute(ctx: tanjun.abc.Context, member: hikari.Member, time: int, reason
 
     if config['jr_mod_role_id'] in member.role_ids and member.id != ctx.author.id:
         embed = hikari.Embed(
-            title='Error',
-            description='You cannot mute other staff members',
+            title="Error",
+            description="You cannot mute other staff members",
             color=config['colors']['error']
         )
         await ctx.respond(embed=embed)
@@ -158,7 +168,16 @@ async def mute(ctx: tanjun.abc.Context, member: hikari.Member, time: int, reason
 
     duration = datetime.timedelta(seconds=time)
 
-    await member.edit(communication_disabled_until=datetime.datetime.now() + duration, reason=reason if reason else undefined.UNDEFINED)
+    try:
+        await member.edit(communication_disabled_until=datetime.datetime.now() + duration, reason=reason if reason else undefined.UNDEFINED)
+    except hikari.ForbiddenError:
+        embed = hikari.Embed(
+            title="Error",
+            description=f"User `{member}` cannot be muted. (Forbidden)",
+            color=config['colors']['error']
+        )
+        await ctx.respond(embed=embed)
+        return
 
     channel = ctx.get_guild().get_channel(config['moderation']['action_log_channel_id'])
     log = f"Moderator: <@{ctx.author.id}> \nUser: <@{member.id}> \nAction: Mute \nDuration: {duration} \nReason: {reason}"
