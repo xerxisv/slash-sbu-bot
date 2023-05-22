@@ -150,7 +150,7 @@ async def on_started(_) -> None:
 
 @bot.listen(hikari.GuildMessageCreateEvent)
 async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
-    if event.member.is_bot or event.message.content is None:
+    if not event.member or event.member.is_bot or event.message.content is None:
         return
     if is_warn(event.message.content):
         await handle_warn(event)
