@@ -54,16 +54,16 @@ async def lookup_section(ctx: tanjun.abc.SlashContext,
     answers.set_footer(text='SBU Rank Academy Answers')
     temp_list = ""
     for banned in random_list:
-        answers.add_field(name=list(lookup.keys())[banned],
+        answers.add_field(name=f"`{list(lookup.keys())[banned]}`",
                           value="Scammer" if list(lookup.values())[banned] else "Not scammer", inline=False)
-        temp_list = temp_list + "\n" + list(lookup.keys())[banned]
+        temp_list +=  f"\n`{list(lookup.keys())[banned]}`"
     questions.add_field(name="Lookup: ", value=temp_list, inline=False)
     await channel.send(f"Lookup Section Answers for <#{ctx.get_channel().id}>")
     await ctx.respond(embed=questions)
     await channel.send(embed=answers)
 
 
-component.add_command(lookup_section)
+component.load_from_scope()
 
 
 @tanjun.as_loader()
