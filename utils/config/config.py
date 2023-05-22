@@ -88,7 +88,8 @@ class Suggestions(TypedDict):
 class ActivatedTasks(TypedDict):
     update_member_count: bool
     backup_db: bool
-    booster_log: bool
+    inactives_check: bool
+    check_verified: bool
 
 
 class Tasks(TypedDict):

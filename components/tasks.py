@@ -9,7 +9,7 @@ import alluka
 import hikari.api.cache
 import tanjun
 
-from utils.config import Config
+from utils.config import Config, ConfigHandler
 from utils.database import DBConnection, convert_to_user
 from utils.error_utils import exception_to_string
 
@@ -18,7 +18,6 @@ api_key = os.getenv('APIKEY')
 component = tanjun.Component()
 
 
-@component.with_schedule
 @tanjun.as_interval(datetime.timedelta(hours=1))
 async def update_member_count(cache: hikari.api.Cache = alluka.inject(type=hikari.api.Cache),
                               config: Config = alluka.inject(type=Config)):
@@ -70,7 +69,6 @@ async def update_member_count(cache: hikari.api.Cache = alluka.inject(type=hikar
     await total_member_vc.edit(name=new_name)
 
 
-@component.with_schedule
 @tanjun.as_interval(datetime.timedelta(days=1))
 async def backup_db():
     with tarfile.open("./backup/backup.tar.gz", "w:gz") as tar_handle:
@@ -82,7 +80,6 @@ async def backup_db():
                 tar_handle.add(os.path.join(root, file), arcname=file)
 
 
-@component.with_schedule
 @tanjun.as_interval(datetime.timedelta(days=1))
 async def check_verified(db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection),
                          cache: hikari.api.Cache = alluka.inject(type=hikari.api.Cache),
@@ -160,7 +157,6 @@ async def check_verified(db: aiosqlite.Connection = alluka.inject(type=aiosqlite
     await db.commit()
 
 
-@component.with_schedule
 @tanjun.as_interval(datetime.timedelta(hours=12))
 async def inactives_check(db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection),
                           cache: hikari.api.Cache = alluka.inject(type=hikari.api.Cache),
@@ -180,6 +176,17 @@ async def inactives_check(db: aiosqlite.Connection = alluka.inject(type=aiosqlit
 
 @tanjun.as_loader()
 def load(client: tanjun.Client):
+    config = ConfigHandler().get_config()
+
+    if config['tasks']['activated']['backup_db']:
+        component.add_schedule(backup_db)
+    if config['tasks']['activated']['update_member_count']:
+        component.add_schedule(update_member_count)
+    if config['tasks']['activated']['check_verified']:
+        component.add_schedule(check_verified)
+    if config['tasks']['activated']['inactives_check']:
+        component.add_schedule(inactives_check)
+
     client.add_component(component)
 
 

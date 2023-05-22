@@ -135,7 +135,8 @@
         "activated": {
             "update_member_count": false,
             "backup_db": false,
-            "booster_log": false
+            "inactives_check": false,
+            "check_verified": false
         },
         "total_members_channel_id": 0,
         "booster_role_id": 0,
