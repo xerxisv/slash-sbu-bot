@@ -9,7 +9,7 @@ import tanjun
 
 from utils import get, trigger_typing
 from utils.checks.db_checks import registered_check
-from utils.config import Config
+from utils.config import Config, ConfigHandler
 from utils.converters import PlayerInfo, to_player_info
 from utils.database import convert_to_user
 from utils.error_utils import log_error
@@ -19,6 +19,15 @@ from utils.error_utils import log_error
 ##############
 
 key = os.getenv('APIKEY')
+
+def error_embed(status):
+    err_embed = hikari.Embed(
+        title=f"Error",
+        description="Something went wrong. Please try again later",
+        color=ConfigHandler().get_config()['colors']['error']
+    )
+    err_embed.set_footer(f"Status: `{status}`")
+    return err_embed
 
 ################
 #   Commands   #
@@ -157,12 +166,7 @@ async def user_info(ctx: tanjun.abc.Context, user: hikari.User, player_info: Pla
     if user['guild_uuid']:
         res = await get(f"https://api.slothpixel.me/api/guilds/id/{user['guild_uuid']}")
         if res.status != 200:
-            embed = hikari.Embed(
-                title=f'Error',
-                description='Something went wrong. Please try again later',
-                color=config['colors']['error']
-            )
-            await ctx.respond(embed=embed)
+            await ctx.respond(embed=error_embed(res.status))
             return
 
         data = await res.json()
@@ -172,21 +176,13 @@ async def user_info(ctx: tanjun.abc.Context, user: hikari.User, player_info: Pla
     if user['inactive_until']:
         embed.add_field(name="Inactive until", value=f"<t:{user['inactive_until']}:d>")
 
-    embed.add_field(name='Verified at', value=f"<t:{user['created_at']}:d>")
+    embed.add_field(name="Verified at", value=f"<t:{user['created_at']}:d>")
 
     await ctx.respond(embed=embed)
 
 
 async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, ign: str,
                                config: Config, db: aiosqlite.Connection):
-    def error_embed(status):
-        err_embed = hikari.Embed(
-            title=f'Error',
-            description='Something went wrong. Please try again later',
-            color=config['colors']['error']
-        )
-        err_embed.set_footer(f"Status: `{status}`")
-        return err_embed
 
 
     # Get user uuid & case sensitive ign
@@ -201,8 +197,8 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
         ign = (await res.json())["name"]
     except AssertionError:  # In case of a 204
         embed = hikari.Embed(
-            title=f'Error',
-            description='Error fetching information from the API. Recheck the spelling of your IGN',
+            title=f"Error",
+            description="Error fetching information from the API. Recheck the spelling of your IGN",
             color=config['colors']['error']
         )
         embed.set_footer(f"Status: `{res.status}`")
@@ -211,52 +207,60 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
     except Exception as exception:  # In case of anything else
         await log_error(ctx, exception)
 
-        await ctx.respond(embed=error_embed)
+        await ctx.respond(embed=error_embed(res.status))
         return
 
     # Remove all member roles
     roles = [role for role in list(member.role_ids) if
              role not in config['verify']['guild_member_roles'] and role != config['verify']['member_role_id']]
 
-    await member.edit(roles=roles, reason='Verification Process')
+    await member.edit(roles=roles, reason="Verification Process")
 
     # Get player hypixel info and guild
     try:
         # Fetch player data
-        res = await get(f'https://api.hypixel.net/player?key={key}&uuid={uuid}')
+        res = await get(f"https://api.hypixel.net/player?key={key}&uuid={uuid}")
         assert res.status == 200, 'api.hypixel.net/player did not return a 200'
         player = (await res.json())['player']
 
         # Fetch guild data
         res = await get(f'https://api.hypixel.net/guild?key={key}&player={uuid}')
-        assert res.status == 200, 'api.hypixel.net/guild did not return a 200'
+        assert res.status == 200, "api.hypixel.net/guild did not return a 200"
         guild = (await res.json())['guild']
 
     except Exception as exception:  # Log any errors that might araise
         await log_error(ctx, exception)
 
-        await ctx.respond(embed=error_embed)
+        await ctx.respond(embed=error_embed(res))
         return
 
     # Check player's socials
     try:
         if player['socialMedia']['links']['DISCORD'] != str(member):
             embed = hikari.Embed(
-                title=f'Error',
-                description='The discord linked with your hypixel account is not the same as the one you are '
-                            'trying to verify with.\n'
-                            f'Your tag: `{str(member)}`\n'
-                            f'Linked tag: `{player["socialMedia"]["links"]["DISCORD"]}`\n'
-                            'You can connect your discord following https://youtu.be/6ZXaZ-chzWI',
+                title="Error",
+                description="The discord linked with your hypixel account is not the same as the one you are "
+                            "trying to verify with.\n"
+                            f"Your tag: `{str(member)}`\n"
+                            f"Linked tag: `{player['socialMedia']['links']['DISCORD']}`\n"
+                            "You can connect your discord following https://youtu.be/6ZXaZ-chzWI",
                 color=config['colors']['error']
             )
             await ctx.respond(embed=embed)
             return
     except KeyError:
         embed = hikari.Embed(
-            title=f'Error',
-            description='You haven\'t linked your discord with your hypixel account yet\n'
-                        'You can connect your discord following https://youtu.be/6ZXaZ-chzWI',
+            title="Error",
+            description="You haven't linked your discord with your hypixel account yet\n"
+                        "You can connect your discord following https://youtu.be/6ZXaZ-chzWI",
+            color=config['colors']['error']
+        )
+        await ctx.respond(embed=embed)
+        return
+    except TypeError:
+        embed = hikari.Embed(
+            title="Error",
+            description="Player does not have a hypixel account.",
             color=config['colors']['error']
         )
         await ctx.respond(embed=embed)
@@ -264,7 +268,7 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
     except Exception as exception:
         await log_error(ctx, exception)
 
-        await ctx.respond(embed=error_embed)
+        await ctx.respond(embed=error_embed(''))
         return
 
     roles = list(member.role_ids)
