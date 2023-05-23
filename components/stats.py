@@ -112,6 +112,7 @@ async def hypixel(ctx: tanjun.abc.MessageContext, ign: str, config: Config = all
             description='Error fetching information from the API. Try again later',
             color=config['colors']['error']
         )
+        embed.set_footer(f"Status (profile): `{res.status}`")
         await ctx.respond(embed=embed)
         return
 
@@ -128,6 +129,7 @@ async def hypixel(ctx: tanjun.abc.MessageContext, ign: str, config: Config = all
             description='Error fetching information from the API. Try again later',
             color=config['colors']['error']
         )
+        embed.set_footer(f"Status (guild): `{res.status}`")
         await ctx.respond(embed=embed)
         return
     else:
@@ -182,18 +184,19 @@ async def weight_check(ctx: tanjun.abc.SlashContext, cute_name: str,
         res = await cursor.fetchone()
 
     user = convert_to_user(res)
-    view = miru.View()
+    weight_view = miru.View()
 
     # get user's profiles
 
     res = await get(f'https://sky.shiiyu.moe/api/v2/profile/{user["uuid"]}')
     if res.status != 200:
         embed = hikari.Embed(
-            title='Error',
-            description='Something went wrong. Make sure your APIs in on.\n'
-                        'If this problem continues, please open a technical difficulties ticket.',
+            title="Error",
+            description="Something went wrong. Make sure your APIs in on.\n"
+                        "If this problem continues, please open a technical difficulties ticket.",
             color=config['colors']['error']
         )
+        embed.set_footer(f"Status: `{res.status}`")
         await ctx.respond(embed=embed)
         return
 
@@ -237,45 +240,54 @@ async def weight_check(ctx: tanjun.abc.SlashContext, cute_name: str,
                         'If this problem continues, please open a technical difficulties ticket.',
             color=config['colors']['error']
         )
+        embed.set_footer("Status: `Key Error`")
         await ctx.respond(embed=embed)
         return
 
     has_previous_role = False
     max_role = None
+    role = None
+
     for role in config['stats']['weight_roles']:
-        if weight > config['stats']['weight_roles'][role]["weight_req"]:
-            if config['stats']['weight_roles'][role]["role_id"] in ctx.member.role_ids:
-                has_previous_role = True
-                continue
-            max_role = role
+        if weight < config['stats']['weight_roles'][role]["weight_req"]:
+            break
+        if config['stats']['weight_roles'][role]["role_id"] in ctx.member.role_ids:
+            has_previous_role = True
+            continue
+        max_role = role
 
     if max_role is not None:
         if not has_previous_role:
-            description = 'You have enough weight to teach others! These ranks will grant you access to our ' \
-                          'tutoring and carry systems. Are you interested in providing these things for newer ' \
-                          'players? Any sort of toxicity in tickets or channels won’t be tolerated and will ' \
-                          'result in punishment.'
+            description = "You have enough weight to teach others! These ranks will grant you access to our " \
+                          "tutoring and carry systems. Are you interested in providing these things for newer " \
+                          "players? Any sort of toxicity in tickets or channels won’t be tolerated and will " \
+                          "result in punishment."
         else:
-            description = 'You have enough weight for the next role'
+            description = "You have enough weight for the next role"
 
-        view.add_item(RoleButton(max_role, ctx.author.id))
-        view.add_item(CancelButton(ctx.author.id))
+        weight_view.add_item(RoleButton(max_role, ctx.author.id))
+        weight_view.add_item(CancelButton(ctx.author.id))
         embed = hikari.Embed(
-            title='Weight roles',
+            title="Weight roles",
             description=description,
             color=config['colors']['primary']
         )
     else:
         embed = hikari.Embed(
-            title='Weight roles',
-            description='You dont have enough weight for any of the next weight roles',
+            title="Weight roles",
+            description="You dont have enough weight for any of the next weight roles.\n"
+                        f"The next requirement is `{config['stats']['weight_roles'][role]['weight_req']}` weight for"
+                        f"<@&{config['stats']['weight_roles'][role]['role_id']}> role.\n"
+                        f"Your weight: `{weight}`",
             color=config['colors']['secondary']
         )
 
     embed.set_footer(text=f'{user["ign"]} - {profile["cute_name"]}')
 
-    message = await ctx.respond(embed=embed, components=view, ensure_result=True)
-    await view.start(message)
+    message = await ctx.respond(embed=embed, components=weight_view, ensure_result=True)
+
+    if len(weight_view.children):
+        await weight_view.start(message)
 
 
 @tanjun.as_loader()
@@ -287,5 +299,5 @@ def load(client: tanjun.Client) -> None:
 
 
 @tanjun.as_unloader()
-def unload(client) -> None:
-    client.remove_component(component)
+def unload(client: tanjun.Client) -> None:
+    client.remove_component_by_name(component.name)
