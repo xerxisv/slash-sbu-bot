@@ -27,10 +27,10 @@ config = ConfigHandler().get_config()
 asyncio.run(DBConnection().connect_db())
 
 from utils.handlers import is_warn, handle_warn
-from components.triggers import TriggersFileHandler
+from utils.triggers.triggers import TriggersFileHandler
 
-trigger_handler = TriggersFileHandler()
-trigger_handler.load_triggers()
+# trigger_handler = TriggersFileHandler()
+# TriggersFileHandler().load_triggers()
 
 ###############
 #    Hooks    #
@@ -154,8 +154,8 @@ async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
         return
     if is_warn(event.message.content):
         await handle_warn(event)
-    if trigger_handler.is_trigger(event.message.content):
-        await trigger_handler.handle_trigger(event)
+    if TriggersFileHandler().is_trigger(event.message.content):
+        await TriggersFileHandler().handle_trigger(event)
 
 
 if __name__ == "__main__":
