@@ -164,7 +164,7 @@ class ConfigHandler(metaclass=Singleton):
 
     async def save_config(self) -> None:
         async with aiofiles.open(self.config_file_path, mode='w') as f:
-            await f.write(json.dumps(self.__config))
+            await f.write(json.dumps(self.__config, indent=4))
 
     async def set_val(self, keys: list[str], val):
         data = self.__config
