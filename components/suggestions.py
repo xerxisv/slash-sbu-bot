@@ -6,8 +6,9 @@ import aiosqlite
 import alluka
 import hikari
 import tanjun
-
 from miru.ext import nav
+
+from utils import trigger_typing
 from utils.config import Config, ConfigHandler
 from utils.database.converters import convert_to_suggestion
 from utils.error_utils import log_error
@@ -50,14 +51,18 @@ async def answer(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, 
         timestamp=datetime.datetime.now(tz=datetime.timezone.utc),
         color=color
     )
-    suggestion_author: hikari.User | int
-    suggestion_author = ctx.cache.get_user(suggestion['author_id'])
-    if suggestion_author is None:
-        suggestion_author = await ctx.rest.fetch_user(suggestion['author_id'])
-    if suggestion_author is None:
-        suggestion_author = suggestion["author_id"]
+    sg_author: hikari.User | int
+    sg_author = ctx.cache.get_user(suggestion['author_id'])
+    if sg_author is None:
+        sg_author = await ctx.rest.fetch_user(suggestion['author_id'])
+    if sg_author is None:
+        sg_author = suggestion["author_id"]
 
-    suggestion_embed.set_author(name=f'Suggested by {suggestion_author}')
+    sg_author_icon = None
+    if isinstance(sg_author, hikari.User):
+        sg_author_icon = str(sg_author.display_avatar_url)
+
+    suggestion_embed.set_author(name=f'Suggested by {sg_author}', icon=sg_author_icon)
     suggestion_embed.add_field(name="Reason", value=f"{reason}", inline=False)
     suggestion_embed.set_footer(text=f'Suggestion number {suggestion_id} | {title} by {ctx.author}')
     suggestion_embed.set_thumbnail(config['logo_url'])
@@ -79,7 +84,7 @@ async def answer(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, 
     )
     try:
         # Try DMing the user
-        await suggestion_author.send(embed=suggestion_embed)
+        await sg_author.send(embed=suggestion_embed)
     except (hikari.InternalServerError, hikari.ForbiddenError, AttributeError):
         # DMing can throw because: API error, user having DMs closed/ bad intents or suggestion_author is an int
         approved_embed.add_field(name="Direct Message", value=f"User could not be dmed", inline=False)
@@ -92,7 +97,7 @@ async def answer(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, 
     else:
         # If no errors occurred send successful message
         approved_embed \
-            .add_field(name="Direct Message", value=f"{suggestion_author} dmed successfully", inline=False)
+            .add_field(name="Direct Message", value=f"{sg_author} dmed successfully", inline=False)
 
     finally:
         # Send the embed regardless of errors
@@ -131,6 +136,8 @@ component.add_slash_command(suggestion_group)
 async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
                   config: Config = alluka.inject(type=Config),
                   db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
+    await trigger_typing(ctx)
+
     if len(suggestion) > 500:
         embed = hikari.Embed(
             title='Error',
@@ -167,11 +174,19 @@ async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
     suggestion_embed.set_thumbnail(config['logo_url'])
 
     channel = ctx.get_guild().get_channel(config['suggestions']['suggestions_channel_id'])
-    message = await channel.send(embed=suggestion_embed)
+    message: hikari.Message = await channel.send(embed=suggestion_embed)
 
-    await ctx.respond(f"Suggestion sent to <#{config['suggestions']['suggestions_channel_id']}>")
     await message.add_reaction('✅')
     await message.add_reaction('❌')
+    await ctx.rest.create_message_thread(channel.id, message.id,
+                                         f"Suggestion No. {suggestion_num}",
+                                         auto_archive_duration=datetime.timedelta(days=3))
+    embed = hikari.Embed(
+        title="Success",
+        description=f"Suggestion successful.\n{message.make_link(config['server_id'])}",
+        color=config['colors']['success']
+    )
+    await ctx.respond(embed=embed)
 
     await db.execute('''
         INSERT INTO "SUGGESTIONS" (suggestion_number, message_id, author_id, suggestion, created_at) 
@@ -267,8 +282,8 @@ async def suggestion_delete(ctx: tanjun.abc.SlashContext, suggestion_id: int,
 @tanjun.with_user_slash_option('author', 'The author of the suggestion', default=None)
 @suggestion_group.as_sub_command('list', 'Lists suggestions')
 async def suggestion_list(ctx: tanjun.abc.SlashContext, author: hikari.User, answered: bool, approved: bool,
-                            config: Config = alluka.inject(type=Config),
-                            db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
+                          config: Config = alluka.inject(type=Config),
+                          db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     script = '''
         SELECT *
         FROM "SUGGESTIONS"
@@ -319,6 +334,7 @@ async def suggestion_list(ctx: tanjun.abc.SlashContext, author: hikari.User, ans
 
     navigator = nav.NavigatorView(pages=pages, timeout=30)
     await navigator.send(ctx.interaction)
+
 
 @tanjun.as_loader()
 def load(client: tanjun.Client):
