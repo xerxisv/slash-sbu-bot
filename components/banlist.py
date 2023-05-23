@@ -54,7 +54,7 @@ async def help(ctx: tanjun.abc.MessageContext, config: Config = alluka.inject(ty
 @bl_slash_group.as_sub_command("add", "Adds a user to the ban list")
 async def add(ctx: tanjun.abc.Context,
               player_info: PlayerInfo,
-              reason: Annotated[tanjun.annotations.Str, "Ban reason"],
+              reason: Annotated[tanjun.annotations.Greedy[tanjun.annotations.Str], "Ban reason"],
               config: Config = alluka.inject(type=Config),
               db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     await trigger_typing(ctx)
