@@ -61,6 +61,8 @@ class AcceptButton(miru.Button):
         if self.config['stats']['default_weight_role_id'] in roles:
             roles.remove(hikari.Snowflake(self.config['stats']['default_weight_role_id']))
 
+        roles = set(roles)
+
         await ctx.member.edit(roles=roles, reason='Weight Roles')
 
         embed = hikari.Embed(
