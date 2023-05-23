@@ -179,27 +179,33 @@ async def user_info(ctx: tanjun.abc.Context, user: hikari.User, player_info: Pla
 
 async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, ign: str,
                                config: Config, db: aiosqlite.Connection):
-    error_embed = hikari.Embed(
-        title=f'Error',
-        description='Something went wrong. Please try again later',
-        color=config['colors']['error']
-    )
+    def error_embed(status):
+        err_embed = hikari.Embed(
+            title=f'Error',
+            description='Something went wrong. Please try again later',
+            color=config['colors']['error']
+        )
+        err_embed.set_footer(f"Status: `{status}`")
+        return err_embed
+
 
     # Get user uuid & case sensitive ign
+    res = None
     try:
         # Convert IGN to UUID
-        response = await get(f'https://api.mojang.com/users/profiles/minecraft/{ign}')
+        res = await get(f'https://api.mojang.com/users/profiles/minecraft/{ign}')
 
-        assert response.status != 204  # Only returns 204 when the name inputted is wrong
+        assert res.status != 204  # Only returns 204 when the name inputted is wrong
 
-        uuid = (await response.json())['id']
-        ign = (await response.json())["name"]
+        uuid = (await res.json())['id']
+        ign = (await res.json())["name"]
     except AssertionError:  # In case of a 204
         embed = hikari.Embed(
             title=f'Error',
             description='Error fetching information from the API. Recheck the spelling of your IGN',
             color=config['colors']['error']
         )
+        embed.set_footer(f"Status: `{res.status}`")
         await ctx.respond(embed=embed)
         return
     except Exception as exception:  # In case of anything else
@@ -217,14 +223,14 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
     # Get player hypixel info and guild
     try:
         # Fetch player data
-        response = await get(f'https://api.hypixel.net/player?key={key}&uuid={uuid}')
-        assert response.status == 200, 'api.hypixel.net/player did not return a 200'
-        player = (await response.json())['player']
+        res = await get(f'https://api.hypixel.net/player?key={key}&uuid={uuid}')
+        assert res.status == 200, 'api.hypixel.net/player did not return a 200'
+        player = (await res.json())['player']
 
         # Fetch guild data
-        response = await get(f'https://api.hypixel.net/guild?key={key}&player={uuid}')
-        assert response.status == 200, 'api.hypixel.net/guild did not return a 200'
-        guild = (await response.json())['guild']
+        res = await get(f'https://api.hypixel.net/guild?key={key}&player={uuid}')
+        assert res.status == 200, 'api.hypixel.net/guild did not return a 200'
+        guild = (await res.json())['guild']
 
     except Exception as exception:  # Log any errors that might araise
         await log_error(ctx, exception)
@@ -283,9 +289,16 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
 
     roles.append(hikari.Snowflake(config['verify']['verified_role_id']))
 
-    roles = list(dict.fromkeys(roles))
+    roles = set(dict.fromkeys(roles))
 
-    await member.edit(roles=roles, reason='Verification Process')
+    try:
+        await member.edit(roles=roles, reason='Verification Process')
+    except hikari.BadRequestError:
+        embed = hikari.Embed(
+            title="Error",
+            description="Something went wrong. Please try again later.",
+            color=config['colors']['error']
+        )
 
     await db.execute('''
             INSERT OR REPLACE INTO "USERS"(uuid, discord_id, ign, guild_uuid, created_at) 
