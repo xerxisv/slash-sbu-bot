@@ -1,5 +1,4 @@
 # TODO create trigger list command
-# TODO add autocomplete to trigger remove
 
 import re
 
@@ -96,6 +95,26 @@ async def remove(ctx: tanjun.abc.Context,
         )
 
     await ctx.respond(embed=embed)
+
+@remove.with_str_autocomplete("trigger")
+async def trigger_autocomplete(ctx: tanjun.abc.AutocompleteContext, value: str) -> None:
+    triggers = trigger_handler.get_triggers()
+    
+    choices = {}
+
+    i = 0
+
+    for t in triggers:
+        if value not in t:
+            continue
+        choices[t] = t
+        
+        i += 1
+
+        if i == 25:
+            break
+    
+    await ctx.set_choices(choices)
 
 
 component.load_from_scope()
