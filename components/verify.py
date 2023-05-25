@@ -269,8 +269,6 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
         await ctx.respond(embed=error_embed(''))
         return
 
-    roles = list(member.role_ids)
-
     if guild is None or guild["name"].upper() not in config['guilds'].keys():
         embed = hikari.Embed(
             title=f'Verification',
@@ -291,7 +289,7 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
 
     roles.append(hikari.Snowflake(config['verify']['verified_role_id']))
 
-    roles = set(dict.fromkeys(roles))
+    roles = set(roles)
 
     try:
         await member.edit(roles=roles, reason='Verification Process')
