@@ -121,9 +121,9 @@ async def user_info(ctx: tanjun.abc.Context, user: hikari.User, player_info: Pla
         script = ('''
             SELECT *
             FROM "USERS"
-            WHERE ign=:ign
+            WHERE uuid=:uuid
         ''', {
-            "ign": player_info['ign']
+            "uuid": player_info['uuid']
         })
     else:
         script = ('''
@@ -158,10 +158,8 @@ async def user_info(ctx: tanjun.abc.Context, user: hikari.User, player_info: Pla
     if user['discord_id'] > 1:
         embed.add_field(name="Discord", value=f"<@{user['discord_id']}>")
 
-    if player_info is not None:
-        embed.add_field(name="IGN", value=player_info['ign'])
-    else:
-        embed.add_field(name="Last known IGN", value=user['ign'])
+    if user['ign'] is not None:
+        embed.add_field(name="Last known IGN", value=f"`{user['ign']}`")
 
     if user['guild_uuid']:
         res = await get(f"https://api.slothpixel.me/api/guilds/id/{user['guild_uuid']}")
