@@ -46,6 +46,7 @@ class SuggestionInfo(TypedDict):
     reason: str
     approved_by: int
     created_at: int
+    thread_id: int
 
 
 def convert_to_suggestion(query_res: Row) -> SuggestionInfo:
@@ -59,7 +60,8 @@ def convert_to_suggestion(query_res: Row) -> SuggestionInfo:
         "approved": query_res[5],
         "reason": query_res[6],
         "approved_by": query_res[7],
-        "created_at": query_res[8]
+        "created_at": query_res[8],
+        "thread_id": query_res[9]
     }
 
 # User

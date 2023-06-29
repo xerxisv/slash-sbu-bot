@@ -76,6 +76,12 @@ async def answer(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, 
     else:
         await message.edit(embed=suggestion_embed)
 
+    if suggestion['thread_id']:
+        if thread := ctx.get_guild().get_channel(suggestion['thread_id']):
+            await thread.edit(locked=True, archived=True)
+        else:
+            await (await ctx.rest.fetch_channel(suggestion['thread_id'])).edit(locked=True, archived=True)
+
     approved_embed = hikari.Embed(
         title=title,
         description=f'Suggestion number {suggestion_id} {title.lower()} successfully.',
@@ -178,9 +184,10 @@ async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
 
     await message.add_reaction('✅')
     await message.add_reaction('❌')
-    await ctx.rest.create_message_thread(channel.id, message.id,
+    thread_id = await ctx.rest.create_message_thread(channel.id, message.id,
                                          f"Suggestion No. {suggestion_num}",
                                          auto_archive_duration=datetime.timedelta(days=3))
+
     embed = hikari.Embed(
         title="Success",
         description=f"Suggestion successful.\n{message.make_link(config['server_id'])}",
@@ -189,14 +196,15 @@ async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
     await ctx.respond(embed=embed)
 
     await db.execute('''
-        INSERT INTO "SUGGESTIONS" (suggestion_number, message_id, author_id, suggestion, created_at) 
-        VALUES (:suggestion_number, :message_id, :author_id, :suggestion, :created_at)
+        INSERT INTO "SUGGESTIONS" (suggestion_number, message_id, author_id, suggestion, created_at, thread_id) 
+        VALUES (:suggestion_number, :message_id, :author_id, :suggestion, :created_at, :thread_id)
     ''', {
         "suggestion_number": suggestion_num,
         "message_id": message.id,
         "suggestion": suggestion,
         "author_id": ctx.author.id,
-        "created_at": int(time.time())
+        "created_at": int(time.time()),
+        "thread_id": thread_id.id
     })
     await db.commit()
 
@@ -264,6 +272,11 @@ async def suggestion_delete(ctx: tanjun.abc.SlashContext, suggestion_id: int,
         await (await ctx.get_guild()
                .get_channel(config['suggestions']['suggestions_channel_id'])
                .fetch_message(suggestion['message_id'])).delete()
+        if suggestion['thread_id']:
+            if thread := ctx.get_guild().get_channel(suggestion['thread_id']):
+                await thread.delete()
+            else:
+                await (await ctx.rest.fetch_channel(suggestion['thread_id'])).delete()
     except hikari.NotFoundError:
         msg = f"Suggestion deleted from database but" \
               f"was not found in <#{config['suggestions']['suggestions_channel_id']}>. Please delete manually"
