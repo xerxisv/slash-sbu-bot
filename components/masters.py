@@ -34,6 +34,7 @@ async def check_req_routine(ctx: tanjun.abc.Context, ign: str, cute_name, is_jr:
             )
             embed.set_footer(f"Status code: {res.status}")
             await ctx.respond(embed=embed)
+            await session.close()
             return
 
         profiles = await res.json()
