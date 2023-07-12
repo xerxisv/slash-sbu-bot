@@ -1,4 +1,3 @@
-# TODO create button on inactive check that sends a txt with the kick commands ready
 import os
 import time
 from typing import Annotated
@@ -7,6 +6,7 @@ import aiohttp
 import aiosqlite
 import alluka
 import hikari
+import miru
 import tanjun
 
 from utils import get, trigger_typing
@@ -28,6 +28,26 @@ min_exp = 0
 
 guild_choices = Annotated[tanjun.annotations.Str, "Guild name", tanjun.annotations.Choices(
     list(map(lambda s: s.lower(), list(config['guilds'].keys()))))]
+
+
+########################
+#    Button Classes    #
+########################
+
+class InactiveListButton(miru.Button):
+    def __init__(self, player_list: str):
+        self.player_list = player_list
+        super().__init__(style=hikari.ButtonStyle.PRIMARY, label="Get kick list")
+
+    async def callback(self, ctx: miru.ViewContext) -> None:
+        kick_list = ""
+        for ign in self.player_list.split('\n')[:-1]:
+            kick_list += "!k " + ign + " Inactivity kick. Join back.\n"
+
+        kick_list += ""
+        file = hikari.Bytes(bytes(kick_list, encoding='utf-8'), 'kick-list.txt')
+        await ctx.respond(attachment=file)
+
 
 ################
 #   Commands   #
@@ -76,6 +96,7 @@ async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
         )
         embed.set_footer(f'Status code: {res.status}')
         await ctx.respond(embed=embed)
+        await session.close()
         return
 
     data = await res.json()
@@ -136,8 +157,10 @@ async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
                     + f"\n\n{embed_body}",
         color=config['colors']['primary']
     )
-
-    await ctx.edit_initial_response(embed=embed)
+    view = miru.View(timeout=30)
+    view.add_item(InactiveListButton(embed_body))
+    msg = await ctx.edit_initial_response(embed=embed, components=view)
+    await view.start(msg)
 
 
 @tanjun.with_check(registered_check)
