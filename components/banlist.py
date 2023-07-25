@@ -47,14 +47,16 @@ async def help(ctx: tanjun.abc.MessageContext, config: Config = alluka.inject(ty
 @tanjun.annotations.with_annotated_args(follow_wrapped=True)
 @tanjun.with_check(mod_check, follow_wrapped=True)
 # prefix options
+@tanjun.with_greedy_argument('reason')
 @tanjun.with_argument('player_info', converters=to_player_info)
 @bl_msg_group.as_sub_command("add", "a")
 # slash options
+@tanjun.with_str_slash_option("reason", "Ban reason")
 @tanjun.with_str_slash_option("banned_ign", "User's IGN", key='player_info', converters=to_player_info)
 @bl_slash_group.as_sub_command("add", "Adds a user to the ban list")
 async def add(ctx: tanjun.abc.Context,
               player_info: PlayerInfo,
-              reason: Annotated[tanjun.annotations.Greedy[tanjun.annotations.Str], "Ban reason"],
+              reason: str,
               config: Config = alluka.inject(type=Config),
               db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     await trigger_typing(ctx)
