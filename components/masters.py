@@ -15,7 +15,7 @@ commands_component = tanjun.Component()
 
 
 # noinspection PyTypedDict
-async def check_req_routine(ctx: tanjun.abc.Context, ign: str, cute_name, is_jr: bool):
+async def check_req_routine(ctx: tanjun.abc.Context, ign: str, cute_name, is_jr: bool, min_passed_reqs=3):
     config = ConfigHandler().get_config()
     await trigger_typing(ctx)
 
@@ -96,54 +96,56 @@ async def check_req_routine(ctx: tanjun.abc.Context, ign: str, cute_name, is_jr:
     slayer_req = config['masters'][guild]['slayer_xp']
     weight_req = config['masters'][guild]['weight']
 
-    passed_reqs = 3
-    dungeon_pass = True
-    slayer_pass = True
-    weight_pass = True
+    passed_flag = 0b000
+    passed_reqs = 0
 
-    if dungeon_lvl < dungeon_req:
-        dungeon_pass = False
-        passed_reqs -= 1
-    if slayer_xp < slayer_req:
-        slayer_pass = False
-        passed_reqs -= 1
-    if weight < weight_req:
-        weight_pass = False
-        passed_reqs -= 1
+    if slayer_xp >= slayer_req:
+        passed_flag += 0b1 << 0
+        passed_reqs += 1
+    if dungeon_lvl >= dungeon_req:
+        passed_flag += 0b1 << 1
+        passed_reqs += 1
+    if weight >= weight_req:
+        passed_flag += 0b1 << 2
+        passed_reqs += 1
 
     title = 'Masters Junior Requirements' if is_jr else 'Masters Requirements'
 
-    if passed_reqs != 0 and passed_reqs != 3:
-        embed = hikari.Embed(
-            title=title,
-            description='',
-            color=config['colors']['secondary']
-        )
-        embed.add_field(name="Hold Up", value=f"You meet {passed_reqs}/3 of the requirements.", inline=False)
-    elif passed_reqs == 0:
+    if not passed_reqs:
         embed = hikari.Embed(
             title=title,
             description='',
             color=config['colors']['error']
         )
         embed.add_field(name="No requirements met", value="You dont meet any of the requirements", inline=False)
+    elif passed_reqs < min_passed_reqs:
+        embed = hikari.Embed(
+            title=title,
+            description='',
+            color=config['colors']['secondary']
+        )
+        embed.add_field(name="Hold Up", value=f"You meet {passed_reqs}/3 of the requirements.", inline=False)
     else:
         embed = hikari.Embed(
             title=title,
             description='',
             color=config['colors']['primary']
         )
-        embed.add_field(name="Congratulations!", value="You meet all the requirements", inline=False)
+        embed.add_field(name="Congratulations!",
+                        value=f"You meet {'all the' if min_passed_reqs == 3 else 'enough'} requirements",
+                        inline=False)
 
     p = "**Passed**"
     np = "**Not Passed**"
 
-    embed.add_field(name="Your Stats", value=f"Slayer Req: `{slayer_req}` xp | "
-                                             f"Your Slayers: **{slayer_xp}** | {p if slayer_pass else np} \n"
-                                             f"Cata req: level `{dungeon_req}` | "
-                                             f"Your Cata: **{dungeon_lvl}** | {p if dungeon_pass else np} \n"
-                                             f"Weight req: `{weight_req}` senither weight | "
-                                             f"Your Weight: {weight} | {p if weight_pass else np}", inline=False)
+    embed.add_field(name="Your Stats",
+                    value=f"Slayer Req: `{slayer_req}` xp | "
+                          f"Your Slayers: `{slayer_xp}` | {p if passed_flag & (0b1 << 0) else np} \n"
+                          f"Cata req: level `{dungeon_req}` | "
+                          f"Your Cata: `{dungeon_lvl}` | {p if passed_flag & (0b1 << 1) else np} \n"
+                          f"Weight req: `{weight_req}` senither weight | "
+                          f"Your Weight: `{weight}` | {p if passed_flag & (0b1 << 2) else np}",
+                    inline=False)
     embed.set_footer(text=f'{ign} | {selected_profile["cute_name"]}')
 
     await ctx.respond(embed=embed)
@@ -168,7 +170,7 @@ async def checkreqjr(ctx: tanjun.abc.Context,
                      ign: Annotated[tanjun.annotations.Str, "Your IGN"],
                      cute_name: Annotated[
                          tanjun.annotations.Str, "Profile name", tanjun.annotations.Choices(profile_choices)] = None):
-    await check_req_routine(ctx, ign, cute_name, is_jr=True)
+    await check_req_routine(ctx, ign, cute_name, is_jr=True, min_passed_reqs=2)
 
 
 @commands_component.with_command()
