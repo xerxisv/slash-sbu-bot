@@ -10,18 +10,6 @@ from utils.config import Config, ConfigHandler
 #    Config    #
 ################
 
-# True stands for scammer - False stands for not scammer
-lookup = {
-    "shachi": True, "Rvon": True, "SleepyBestLegit": False, "someonestolemypc": True, "jpgaming55": True, "LordZarach": False,
-    'Skeldow': True, 'StopWipingMe': True, 'LavenderHeights': True, 'MartinNemi03': False, '69mn': True,
-    'zStrelizia': True, 'Adviceful': True, 'Zykm': True, 'muffinio': True, 'spedwick': True, 'FantasmicGalaxy': False,
-    'urra': True, 'Iwolf05': True, 'noscope_': True, 'luvanion': True, 'KSavvv18': True, '43110s': True,
-    'dukioooo': False, 'CoruptKun': True, 'Teunman': True, '302q': True, 'Tera_Matt': False, 'jexh': False,
-    'Royalist': True, 'McMuffinLover': True, 'o600': False, 'jjww2': False, 'kanimetv': True, 'LeaPhant': False,
-    'Zanjoe': True, 'Yarnzy_': True, 'ih8grinding': True, 'Verychillvibes': True, 'LesbianCatgirl': False,
-    'Legendofhub': True, 'Spectrov': True, '_YungGravy': False, 'wigner': True, 'U4BJ': True
-}
-
 ################
 #   Commands   #
 ################
@@ -33,32 +21,42 @@ component = tanjun.Component()
                          default_member_permissions=hikari.Permissions.BAN_MEMBERS)
 async def lookup_section(ctx: tanjun.abc.SlashContext,
                          config: Config = alluka.inject(type=Config)):
-    length = len(lookup)
-    random_list = random.sample(range(0, length), 9)
-    channel = ctx.get_guild().get_channel(config['helper_academy']['ticket_commands_channel_id'])
-
+    # Lookup Questions
     questions = hikari.Embed(
         title='Lookup Section',
         description='',
         color=config['colors']['primary']
     )
-    answers = hikari.Embed(
-        title=f'Lookup Section Answers',
-        description='',
-        color=config['colors']['secondary']
-    )
     questions.set_footer(text='SBU Rank Academy Questions')
     questions.add_field(name="What to do.",
                         value="Look up this list of people and mention if they are cleared to enter our guild or not:",
                         inline=False)
+    # Lookup Answers
+    answers = hikari.Embed(
+        title='Lookup Section Answers',
+        description=f'<#{ctx.get_channel().id}>',
+        color=config['colors']['secondary']
+    )
     answers.set_footer(text='SBU Rank Academy Answers')
-    temp_list = ""
-    for banned in random_list:
-        answers.add_field(name=f"`{list(lookup.keys())[banned]}`",
-                          value="Scammer" if list(lookup.values())[banned] else "Not scammer", inline=False)
-        temp_list +=  f"\n`{list(lookup.keys())[banned]}`"
-    questions.add_field(name="Lookup: ", value=temp_list, inline=False)
-    await channel.send(f"Lookup Section Answers for <#{ctx.get_channel().id}>")
+
+    # Add random scammers to the embeds
+    lookup_scammers = config['helper_academy']['lookup_scammers']
+    length = len(lookup_scammers)
+    random_list = random.sample(range(0, length), 9)
+    channel = ctx.get_guild().get_channel(config['helper_academy']['ticket_commands_channel_id'])
+
+    question_list = ""
+    answer_list = ""
+    for ran_index in random_list:
+        scammer_ign = list(lookup_scammers.keys())[ran_index]
+
+        answer_list += f"`{scammer_ign}`: **" + ("Not allowed ❌" if lookup_scammers[scammer_ign][
+            'is_scammer'] else "Allowed ✅") + "**\n"
+        question_list += f"\n`{scammer_ign}`"
+
+    questions.add_field(name="Lookup: ", value=question_list, inline=False)
+    answers.add_field(name="Answers: ", value=answer_list, inline=False)
+
     await ctx.respond(embed=questions)
     await channel.send(embed=answers)
 

@@ -41,8 +41,13 @@ class GTatsu(TypedDict):
     top_active_role_id: int
 
 
+class ScammerLookup(TypedDict):
+    uuid: str
+    is_scammer: bool
+
 class HelperAcademy(TypedDict):
     ticket_commands_channel_id: int
+    lookup_scammers: dict[str, ScammerLookup]
 
 
 class Requirements(TypedDict):
