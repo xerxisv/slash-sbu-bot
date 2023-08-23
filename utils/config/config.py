@@ -70,7 +70,8 @@ class Moderation(TypedDict):
 
 
 class Rep(TypedDict):
-    rep_log_channel_id: int
+    craft_rep_channel_id: int
+    carry_rep_channel_id: int
 
 
 class WeightRoleInfo(TypedDict):
@@ -120,7 +121,8 @@ class Info(TypedDict):
 
 
 class Config(TypedDict, total=False):
-    logo_url: str | None
+    logo_url: str
+    logo_url_dark: str
     server_id: int
 
     jr_mod_role_id: int

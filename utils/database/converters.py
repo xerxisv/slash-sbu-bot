@@ -24,15 +24,17 @@ class RepCommandInfo(TypedDict):
     receiver: int
     provider: int
     comments: str
+    created_at: float
     msg_id: int
 
 def convert_to_rep(query_res: Row) -> RepCommandInfo:
     return {
-        'rep_id': query_res[0],
-        'receiver': query_res[1],
-        'provider': query_res[2],
-        'comments': query_res[3],
-        'msg_id': query_res[6],
+        "rep_id": query_res[0],
+        "receiver": query_res[1],
+        "provider": query_res[2],
+        "comments": query_res[3],
+        "created_at": query_res[4],
+        "msg_id": query_res[5],
     }
 
 # Suggestion
