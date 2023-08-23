@@ -1,10 +1,18 @@
+import time
+
+import aiosqlite
 import hikari
+import tanjun
 
-from utils.config import ConfigHandler
+from utils import weighted_randint
+from utils.config import Config
 
-config = ConfigHandler().get_config()
+TATSU_CD = 120
+tatsu_dates = {}
+last_commit = 0
 
-async def handle_warn(message: hikari.GuildMessageCreateEvent):
+
+async def handle_warn(message: hikari.GuildMessageCreateEvent, config: Config):
     if config['jr_mod_role_id'] not in message.member.role_ids:
         return
 
@@ -42,3 +50,38 @@ async def handle_warn(message: hikari.GuildMessageCreateEvent):
 
 def is_warn(message: str):
     return message and message.startswith("!warn")
+
+
+def is_bridge_message(message: hikari.Message, config: Config):
+    gtatsu_config = config['gtatsu']
+    return message.channel_id in gtatsu_config['bridge_channel_ids'] and message.author.id in gtatsu_config[
+        'bridge_bot_ids'] and len(message.embeds) > 0
+
+
+def ensure_cooldown(ign: str) -> bool:
+    return False if ign not in tatsu_dates else tatsu_dates[ign] + TATSU_CD > int(time.time())
+
+
+async def handle_message(message: hikari.GuildMessageCreateEvent,
+                         db: aiosqlite.Connection = tanjun.inject()):
+    ign = message.embeds[0].author.name
+
+    if not isinstance(ign, str):
+        return
+    if ign.find(' ') > 0:
+        return
+    if ensure_cooldown(ign):
+        return
+
+    await db.execute('''
+        UPDATE "USERS"
+        SET tatsu_score=tatsu_score + (:amount * gtatsu_modifier)
+        WHERE UPPER(ign)=:ign;
+    ''', {
+        "ign": ign.upper(),
+        "count": weighted_randint(12, 3)
+    })
+    if (time.time() - last_commit) > 3600:
+        await db.commit()
+
+    tatsu_dates[ign] = int(time.time())

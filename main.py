@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from utils.config.config import Config, ConfigHandler
 from utils.database.connection import DBConnection
+from utils.handlers.handlers import handle_message, is_bridge_message
 
 #######################
 #    General Setup    #
@@ -22,7 +23,6 @@ colorama.init(autoreset=True)
 load_dotenv()
 
 asyncio.run(ConfigHandler().load_config())
-config = ConfigHandler().get_config()
 
 asyncio.run(DBConnection().connect_db())
 
@@ -59,6 +59,7 @@ command_usage = {
     "skycrypt": "+s <ign> [profile]",
     # verify
     "verify": "+verify <ign>",
+    "forceverify": "+forceverify <ign> <member>",
     # suggestions
     "suggest": "+suggest <your_suggestion>"
 }
@@ -102,7 +103,7 @@ async def parser_error_hook(ctx: tanjun.abc.MessageContext, error: tanjun.Parser
     embed = hikari.Embed(
         title='Error',
         description=description,
-        color=config['colors']['error']
+        color=ConfigHandler().get_config()['colors']['error']
     )
     await ctx.respond(embed=embed)
     return None
@@ -115,7 +116,8 @@ async def parser_error_hook(ctx: tanjun.abc.MessageContext, error: tanjun.Parser
 intents = hikari.Intents.ALL_UNPRIVILEGED | hikari.Intents.MESSAGE_CONTENT
 
 bot: typing.Any = hikari.impl.GatewayBot(os.getenv('TOKEN'), intents=intents)
-client: tanjun.Client = tanjun.Client.from_gateway_bot(bot, declare_global_commands=config['server_id']) \
+client: tanjun.Client = tanjun.Client.from_gateway_bot(bot, declare_global_commands=ConfigHandler().get_config()[
+    'server_id']) \
     .add_prefix("+").set_hooks(hooks).add_check(tanjun.checks.GuildCheck())
 
 client.load_directory("./components")
@@ -135,7 +137,6 @@ client.load_directory("./components")
 )
 client.set_type_dependency(aiosqlite.Connection, DBConnection().get_db())
 client.set_type_dependency(Config, ConfigHandler().get_config())
-
 miru.install(bot)
 
 
@@ -149,13 +150,16 @@ async def on_started(_) -> None:
 
 
 @bot.listen(hikari.GuildMessageCreateEvent)
-async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
-    if not event.member or event.member.is_bot or event.message.content is None:
+async def on_message(event: hikari.GuildMessageCreateEvent, config: Config = tanjun.inject()) -> None:
+    if not event.member:
         return
+
     if is_warn(event.message.content):
-        await handle_warn(event)
+        await handle_warn(event, config)
     if TriggersFileHandler().is_trigger(event.message.content):
         await TriggersFileHandler().handle_trigger(event)
+    elif is_bridge_message(event.message, config):
+        await handle_message(event)
 
 
 if __name__ == "__main__":

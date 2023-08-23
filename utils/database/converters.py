@@ -1,6 +1,7 @@
 from typing import TypedDict
 from aiosqlite import Row
 
+
 # Banlist
 class BannedMemberInfo(TypedDict):
     uuid: str
@@ -8,6 +9,7 @@ class BannedMemberInfo(TypedDict):
     moderator: int
     banned_at: int
     message: int
+
 
 def convert_to_banned(query_res: Row) -> BannedMemberInfo:
     return {
@@ -18,6 +20,7 @@ def convert_to_banned(query_res: Row) -> BannedMemberInfo:
         "message": query_res[4]
     }
 
+
 # Rep
 class RepCommandInfo(TypedDict):
     rep_id: int
@@ -26,6 +29,7 @@ class RepCommandInfo(TypedDict):
     comments: str
     created_at: float
     msg_id: int
+
 
 def convert_to_rep(query_res: Row) -> RepCommandInfo:
     return {
@@ -36,6 +40,7 @@ def convert_to_rep(query_res: Row) -> RepCommandInfo:
         "created_at": query_res[4],
         "msg_id": query_res[5],
     }
+
 
 # Suggestion
 class SuggestionInfo(TypedDict):
@@ -52,7 +57,6 @@ class SuggestionInfo(TypedDict):
 
 
 def convert_to_suggestion(query_res: Row) -> SuggestionInfo:
-
     return {
         "suggestion_number": query_res[0],
         "message_id": query_res[1],
@@ -66,6 +70,7 @@ def convert_to_suggestion(query_res: Row) -> SuggestionInfo:
         "thread_id": query_res[9]
     }
 
+
 # User
 class UserInfo(TypedDict):
     discord_id: int
@@ -74,9 +79,11 @@ class UserInfo(TypedDict):
     ign: str
     inactive_until: int
     tatsu_score: int
-    weekly_tatsu_score: int
+    last_week_tatsu: int
     this_week_tatsu_score: int
+    gtatsu: int
     created_at: int
+
 
 def convert_to_user(query_res: Row) -> UserInfo:
     return {
@@ -86,7 +93,8 @@ def convert_to_user(query_res: Row) -> UserInfo:
         'guild_uuid': query_res[3],
         'inactive_until': query_res[4],
         'tatsu_score': query_res[5],
-        'weekly_tatsu_score': query_res[7],
+        'last_week_tatsu': query_res[7],
         'this_week_tatsu_score': query_res[5] - query_res[7],
-        'created_at': query_res[6]
+        'created_at': query_res[6],
+        'gtatsu': query_res[8]
     }

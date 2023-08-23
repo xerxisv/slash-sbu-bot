@@ -8,6 +8,7 @@ import aiosqlite
 import alluka
 import hikari.api.cache
 import tanjun
+from aiosqlite import Connection
 
 from utils.config import Config, ConfigHandler
 from utils.database import DBConnection, convert_to_user
@@ -174,10 +175,20 @@ async def inactives_check(db: aiosqlite.Connection = alluka.inject(type=aiosqlit
             .send(exception_to_string('inactives_check task', exception))
 
 
+@tanjun.as_time_schedule(timezone=datetime.timezone.utc, weekly=True, days=6)
+async def clear_tatsu(db: Connection = tanjun.inject()):
+    await db.execute('''
+        UPDATE "USERS"
+        SET last_week_tatsu = tatsu_score
+    ''')
+    await db.commit()
+
 @tanjun.as_loader()
 def load(client: tanjun.Client):
     config = ConfigHandler().get_config()
 
+    if config['tasks']['activated']['gtatsu']:
+        component.add_schedule(clear_tatsu)
     if config['tasks']['activated']['backup_db']:
         component.add_schedule(backup_db)
     if config['tasks']['activated']['update_member_count']:

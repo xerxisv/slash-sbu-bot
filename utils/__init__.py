@@ -1,5 +1,8 @@
+from random import random
+
 import aiohttp
 import tanjun
+
 
 profile_choices = ['apple', 'banana', 'blueberry', 'coconut', 'cucumber', 'grapes',
             'kiwi', 'lemon', 'lime', 'mango', 'orange', 'papaya', 'pear',
@@ -37,3 +40,10 @@ async def trigger_typing(ctx: tanjun.abc.Context, defer: bool = False):
         await ctx.rest.trigger_typing(ctx.get_channel())
     elif isinstance(ctx, tanjun.abc.SlashContext):
         await ctx.defer(ephemeral=defer)
+
+def weighted_randint(end, loops=1) -> int:
+    result = 0
+    for _ in range(loops):
+        result += round(random() * (end / loops))
+
+    return int(result)

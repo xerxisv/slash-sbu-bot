@@ -3,6 +3,7 @@ import typing
 import humanfriendly
 
 from utils import extract_uuid
+from uuid import UUID
 
 class PlayerInfo(typing.TypedDict):
     ign: str

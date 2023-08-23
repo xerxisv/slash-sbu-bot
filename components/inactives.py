@@ -142,7 +142,7 @@ async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
                 pass
             except Exception as exception:
                 await log_error(ctx, exception)
-            # Add him to inactives if not
+            # Add them to inactives if not
             username = hypixel_prof['player']['displayname']
             embed_body += f"`{username}`\n"
 

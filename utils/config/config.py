@@ -39,7 +39,12 @@ class GTatsu(TypedDict):
     bridge_bot_ids: list[int]
     bridge_channel_ids: list[int]
     top_active_role_id: int
+    cooldown: int
 
+
+class ScammerLookup(TypedDict):
+    uuid: str
+    is_scammer: bool
 
 class ScammerLookup(TypedDict):
     uuid: str
@@ -94,6 +99,7 @@ class Suggestions(TypedDict):
 class ActivatedTasks(TypedDict):
     update_member_count: bool
     backup_db: bool
+    gtatsu: bool
     inactives_check: bool
     check_verified: bool
 
@@ -131,6 +137,7 @@ class Config(TypedDict, total=False):
     jr_admin_role_id: int
     co_owner_role_id: int
     owner_role_id: int
+    helper_role_id: int
 
     mod_chat_channel_id: int
     admin_chat_channel_id: int
