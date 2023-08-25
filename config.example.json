@@ -1,5 +1,6 @@
 {
-    "logo_url": null,
+    "logo_url": "",
+    "logo_url_dark": "",
     "server_id": 0,
 
     "jr_mod_role_id": 0,
@@ -105,7 +106,8 @@
     },
 
     "rep": {
-        "rep_log_channel_id": 0
+        "craft_rep_channel_id": 0,
+        "carry_rep_channel_id": 0
     },
 
     "stats": {

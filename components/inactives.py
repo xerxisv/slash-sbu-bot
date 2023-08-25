@@ -42,9 +42,8 @@ class InactiveListButton(miru.Button):
     async def callback(self, ctx: miru.ViewContext) -> None:
         kick_list = ""
         for ign in self.player_list.split('\n')[:-1]:
-            kick_list += "!k " + ign.removeprefix('`').removesuffix('`') + " Inactivity kick. Join back.\n"
+            kick_list += ign.removeprefix('`').removesuffix('`') + " "
 
-        kick_list += ""
         file = hikari.Bytes(bytes(kick_list, encoding='utf-8'), 'kick-list.txt')
         await ctx.respond(attachment=file)
 
