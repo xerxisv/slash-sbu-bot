@@ -1,5 +1,6 @@
 import time
 
+import alluka
 import aiohttp
 import aiosqlite
 import hikari
@@ -9,6 +10,7 @@ from utils import weighted_randint
 from utils.config import Config
 from utils.converters import to_player_info
 from utils.database import convert_to_user
+from utils.database.connection import DBConnection
 
 TATSU_CD = 120
 tatsu_dates = {}
@@ -67,7 +69,7 @@ def ensure_cooldown(ign: str) -> bool:
 
 
 async def handle_tatsu(message: hikari.GuildMessageCreateEvent,
-                         db: aiosqlite.Connection = tanjun.inject()):
+                         db: aiosqlite.Connection = DBConnection().get_db()):
     ign = message.embeds[0].author.name
 
     if not isinstance(ign, str):
@@ -93,7 +95,6 @@ async def handle_tatsu(message: hikari.GuildMessageCreateEvent,
         return
 
     user = convert_to_user(res)
-
     if user['discord_id'] < 1:
         return
 
@@ -104,5 +105,5 @@ async def handle_tatsu(message: hikari.GuildMessageCreateEvent,
     json = {'action': 0, 'amount': tatsu_score}
 
     await session.patch(url, headers=headers, json=json)
-
+    session.close()
     tatsu_dates[ign] = int(time.time())

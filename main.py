@@ -150,12 +150,12 @@ async def on_started(_) -> None:
 
 @bot.listen(hikari.GuildMessageCreateEvent)
 async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
+    if is_bridge_message(event.message, config):
+        await handle_tatsu(event)
     if not event.member or event.member.is_bot or event.message.content is None:
         return
     if is_warn(event.message.content):
         await handle_warn(event)
-    if is_bridge_message(event.message, config):
-        await handle_tatsu(event)
 
     if TriggersFileHandler().is_trigger(event.message.content):
         await TriggersFileHandler().handle_trigger(event)
