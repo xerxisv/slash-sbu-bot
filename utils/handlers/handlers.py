@@ -105,5 +105,5 @@ async def handle_tatsu(message: hikari.GuildMessageCreateEvent,
     json = {'action': 0, 'amount': tatsu_score}
 
     await session.patch(url, headers=headers, json=json)
-    session.close()
+    await session.close()
     tatsu_dates[ign] = int(time.time())
