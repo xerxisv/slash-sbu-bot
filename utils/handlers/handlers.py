@@ -100,7 +100,7 @@ async def handle_tatsu(message: hikari.GuildMessageCreateEvent,
     tatsu_score = weighted_randint(12, 3)
     session = aiohttp.ClientSession()
     headers = {'Content-Type': 'application/json', 'Authorization': os.getenv("tatsukey")}
-    url = f'https://api.tatsu.gg/v1/guilds/764326796736856066/members/{user["discord_id"]}/score'
+    url = f'https://api.tatsu.gg/v1/guilds/{message.guild_id}/members/{user["discord_id"]}/score'
     json = {'action': 0, 'amount': tatsu_score}
 
     await session.patch(url, headers=headers, json=json)
