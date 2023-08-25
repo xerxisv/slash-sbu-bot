@@ -26,7 +26,7 @@ config = ConfigHandler().get_config()
 
 asyncio.run(DBConnection().connect_db())
 
-from utils.handlers import is_warn, handle_warn
+from utils.handlers import is_warn, handle_warn, is_bridge_message, handle_tatsu
 from utils.triggers.triggers import TriggersFileHandler
 
 # trigger_handler = TriggersFileHandler()
@@ -154,6 +154,9 @@ async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
         return
     if is_warn(event.message.content):
         await handle_warn(event)
+    if is_bridge_message(event.message, config):
+        await handle_tatsu(event)
+
     if TriggersFileHandler().is_trigger(event.message.content):
         await TriggersFileHandler().handle_trigger(event)
 
