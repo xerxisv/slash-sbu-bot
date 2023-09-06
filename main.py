@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 
 from utils.config.config import Config, ConfigHandler
 from utils.database.connection import DBConnection
-from utils.handlers.handlers import handle_message, is_bridge_message
 
 #######################
 #    General Setup    #
@@ -26,7 +25,7 @@ asyncio.run(ConfigHandler().load_config())
 
 asyncio.run(DBConnection().connect_db())
 
-from utils.handlers import is_warn, handle_warn
+from utils.handlers import is_warn, handle_warn, is_bridge_message, handle_tatsu
 from utils.triggers.triggers import TriggersFileHandler
 
 # trigger_handler = TriggersFileHandler()
@@ -150,16 +149,18 @@ async def on_started(_) -> None:
 
 
 @bot.listen(hikari.GuildMessageCreateEvent)
-async def on_message(event: hikari.GuildMessageCreateEvent, config: Config = tanjun.inject()) -> None:
-    if not event.member:
+async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
+    if is_bridge_message(event.message, ConfigHandler().get_config()):
+        await handle_tatsu(event)
+
+    if not event.member or event.member.is_bot or event.message.content is None:
         return
 
     if is_warn(event.message.content):
-        await handle_warn(event, config)
+        await handle_warn(event, ConfigHandler().get_config())
+
     if TriggersFileHandler().is_trigger(event.message.content):
         await TriggersFileHandler().handle_trigger(event)
-    elif is_bridge_message(event.message, config):
-        await handle_message(event)
 
 
 if __name__ == "__main__":
