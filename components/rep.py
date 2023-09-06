@@ -160,7 +160,7 @@ async def rep_remove(ctx: tanjun.abc.SlashContext, rep_id: int,
 
 
 @tanjun.with_user_slash_option("carrier", "The user whose carrier reps to list", default=None)
-@tanjun.with_user_slash_option("crafter", "The user whose carry reps to list", default=None)
+@tanjun.with_user_slash_option("crafter", "The user whose crafting reps to list", default=None)
 @rep_slash_group.as_sub_command("list", "Lists the reps a user has received", always_defer=True)
 async def rep_list(ctx: tanjun.abc.SlashContext, carrier: hikari.User, crafter: hikari.User,
                    config: Config = alluka.inject(type=Config),
