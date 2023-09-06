@@ -47,6 +47,28 @@ class InactiveListButton(miru.Button):
         file = hikari.Bytes(bytes(kick_list, encoding='utf-8'), 'kick-list.txt')
         await ctx.respond(attachment=file)
 
+class InactiveKickButton(miru.Button):
+    def __init__(self, player_list: str, guild_name: str):
+        self.player_list = player_list
+        self.guild_name = guild_name
+        super().__init__(style=hikari.ButtonStyle.DANGER, label="Kick 5 members from the inactive list")
+
+    async def callback(self, ctx: miru.ViewContext) -> None:
+        session = aiohttp.ClientSession()
+        i = 0
+        for ign in self.player_list.split('\n')[:-1]:
+            if i == 5:
+                break
+            headers = {'Content-Type': 'application/json'}
+            url = f'localhost:4139/{self.guild_name}/kick'
+            json = {'username': ign}
+
+            r = await session.post(url, headers=headers, json=json)
+            r.close()
+            i += 1
+        await session.close()
+        await ctx.respond("Successfully kicked 5 guild members")
+
 
 ################
 #   Commands   #
@@ -158,6 +180,17 @@ async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
     )
     view = miru.View(timeout=30)
     view.add_item(InactiveListButton(embed_body))
+    guild_name = ""
+    if guild == "sb alpha psi":
+        guild_name = "alpha"
+    elif guild == "sb lambda pi":
+        guild_name = "lambda"
+    elif guild == "sb university":
+        guild_name = "uni"
+    elif guild == "sb sigma chi":
+        guild_name = "sigma"
+    if guild_name != "":
+        view.add_item(InactiveKickButton(embed_body, guild_name))
     msg = await ctx.edit_initial_response(embed=embed, components=view)
     await view.start(msg)
 
