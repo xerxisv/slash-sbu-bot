@@ -47,28 +47,33 @@ class InactiveListButton(miru.Button):
         file = hikari.Bytes(bytes(kick_list, encoding='utf-8'), 'kick-list.txt')
         await ctx.respond(attachment=file)
 
-class InactiveKickButton(miru.Button):
-    def __init__(self, player_list: str, guild_name: str):
+cclass InactiveKickButton(miru.Button):
+
+    def __init__(self, player_list: str, guild_url: str):
         self.player_list = player_list
-        self.guild_name = guild_name
+        self.guild_endpoint = guild_url
         super().__init__(style=hikari.ButtonStyle.DANGER, label="Kick 5 members from the inactive list")
 
     async def callback(self, ctx: miru.ViewContext) -> None:
-        session = aiohttp.ClientSession()
+        session = aiohttp.ClientSession(trust_env=True)
         i = 0
+        await ctx.defer();
+        if not 808070562046935060 in ctx.member.role_ids and not ctx.member.id == 780889323162566697:
+            await ctx.respond("You require Junior Administrator to run this command!")
+            await session.close()
+            return
         for ign in self.player_list.split('\n')[:-1]:
             if i == 5:
                 break
             headers = {'Content-Type': 'application/json'}
-            url = f'localhost:4139/{self.guild_name}/kick'
-            json = {'username': ign}
-
+            json = {'username': ign.replace("`", ""), "reason": "Inactive, please join back"}
+            url = str(self.guild_endpoint)
             r = await session.post(url, headers=headers, json=json)
             r.close()
             i += 1
+            await asyncio.sleep(1)
         await session.close()
         await ctx.respond("Successfully kicked 5 guild members")
-
 
 ################
 #   Commands   #
@@ -182,13 +187,13 @@ async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
     view.add_item(InactiveListButton(embed_body))
     guild_name = ""
     if guild == "sb alpha psi":
-        guild_name = "alpha"
+        guild_name = "http://localhost:1440/alpha/kick"
     elif guild == "sb lambda pi":
-        guild_name = "lambda"
+        guild_name = "http://localhost:1439/lambda/kick"
     elif guild == "sb university":
-        guild_name = "uni"
+        guild_name = "http://localhost:1441/uni/kick"
     elif guild == "sb sigma chi":
-        guild_name = "sigma"
+        guild_name = "http://localhost:1442/sigma/kick"
     if guild_name != "":
         view.add_item(InactiveKickButton(embed_body, guild_name))
     msg = await ctx.edit_initial_response(embed=embed, components=view)
