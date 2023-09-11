@@ -14,12 +14,15 @@
     "admin_chat_channel_id": 0,
     "bot_log_channel_id": 0,
 
+    "min_gexp": 0,
+
     "guilds": {
         "guild name": {
             "member_role_id": 0,
             "guild_uuid": "",
             "bridge_uuid": "",
-            "member_count_channel_id": 0
+            "member_count_channel_id": 0,
+            "endpoint": ""
         }
     },
 

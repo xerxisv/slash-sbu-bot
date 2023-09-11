@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 from typing import Annotated
@@ -24,8 +25,6 @@ from utils.error_utils import log_error
 config = ConfigHandler().get_config()
 api_key = os.getenv("APIKEY")
 
-min_exp = 0
-
 guild_choices = Annotated[tanjun.annotations.Str, "Guild name", tanjun.annotations.Choices(
     list(map(lambda s: s.lower(), list(config['guilds'].keys()))))]
 
@@ -41,33 +40,43 @@ class InactiveListButton(miru.Button):
 
     async def callback(self, ctx: miru.ViewContext) -> None:
         kick_list = ""
-        for ign in self.player_list.split('\n')[:-1]:
-            kick_list += ign.removeprefix('`').removesuffix('`') + " "
+        for ign in self.player_list.split('\n')[1:][::-1]:
+            kick_list += ign + " "
 
         file = hikari.Bytes(bytes(kick_list, encoding='utf-8'), 'kick-list.txt')
         await ctx.respond(attachment=file)
 
+
 class InactiveKickButton(miru.Button):
-    def __init__(self, player_list: str, guild_name: str):
+    def __init__(self, user_id: int, player_list: str, endpoint: str):
+        self.user_id = user_id
         self.player_list = player_list
-        self.guild_name = guild_name
-        super().__init__(style=hikari.ButtonStyle.DANGER, label="Kick 5 members from the inactive list")
+        self.endpoint = endpoint
+        super().__init__(style=hikari.ButtonStyle.DANGER, label="Kick bottom 5")
 
     async def callback(self, ctx: miru.ViewContext) -> None:
-        session = aiohttp.ClientSession()
-        i = 0
-        for ign in self.player_list.split('\n')[:-1]:
-            if i == 5:
-                break
-            headers = {'Content-Type': 'application/json'}
-            url = f'localhost:4139/{self.guild_name}/kick'
-            json = {'username': ign}
+        if ctx.user.id != self.user_id:
+            return
 
-            r = await session.post(url, headers=headers, json=json)
-            r.close()
-            i += 1
-        await session.close()
-        await ctx.respond("Successfully kicked 5 guild members")
+        view = miru.View(timeout=30)
+        view.add_item(InactiveListButton(self.player_list))
+
+        msg = await ctx.edit_response(components=view)
+        await view.start(msg)
+
+        await ctx.get_channel().trigger_typing()
+
+        async with aiohttp.ClientSession(trust_env=True) as session:
+            # Hack to avoid the blank string :P
+            for ign in self.player_list.split('\n')[1:][-1:-6:-1]:
+                await session.post(
+                    url=self.endpoint + 'kick',
+                    headers={'Content-Type': 'application/json'},
+                    json={'username': ign, 'reason': 'Inactivity kick. Join back.'}
+                )
+                await asyncio.sleep(1)
+
+        await ctx.get_channel().send("Successfully kicked 5 guild members")
 
 
 ################
@@ -133,13 +142,14 @@ async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
     total_inactive = 0  # Sum of inactive players
 
     for player in data["guild"]["members"]:  # for every member in the guild
-        exp_7d_total = 0
-
-        for key in player["expHistory"]:  # find his total exp over the past 7 days
-            exp_7d_total += player["expHistory"][key]
+        # Check if they joined recently. This exists just to skip some unnecessary api calls for new members
+        if (time.time() - (player['joined'] / 1000) - 604800) < 0:
+            continue
+        if player["uuid"] in inactives_uuids:
+            continue
 
         # if total exp is over the minimum or player uuid is in the inactives then go to next member
-        if exp_7d_total > min_exp or player["uuid"] in inactives_uuids:
+        if sum(player["expHistory"].values()) > config['min_gexp']:
             continue
 
         try:  # Fetch player info from hypixel API
@@ -153,7 +163,7 @@ async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
 
         except Exception as exception:  # If there is an exception, log it and add the uuid in the embed
             await log_error(ctx, exception)
-            embed_body += f'{player["uuid"]}\n'
+            embed_body += f'\n{player["uuid"]}'
 
         else:  # Else
             # Continue if player has logged in the last 7 days
@@ -166,7 +176,7 @@ async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
                 await log_error(ctx, exception)
             # Add them to inactives if not
             username = hypixel_prof['player']['displayname']
-            embed_body += f"`{username}`\n"
+            embed_body += f"\n{username}"
 
         total_inactive += 1  # Increment the inactive total
 
@@ -175,22 +185,16 @@ async def inactive_check(ctx: tanjun.abc.SlashContext, guild: guild_choices,
     embed = hikari.Embed(
         title=f"Inactive List for {data['guild']['name']}",
         description=f"{total_inactive} members were found to be inactive."
-                    + f"\n\n{embed_body}",
+                    f"```{embed_body}```",
         color=config['colors']['primary']
     )
+
     view = miru.View(timeout=30)
     view.add_item(InactiveListButton(embed_body))
-    guild_name = ""
-    if guild == "sb alpha psi":
-        guild_name = "alpha"
-    elif guild == "sb lambda pi":
-        guild_name = "lambda"
-    elif guild == "sb university":
-        guild_name = "uni"
-    elif guild == "sb sigma chi":
-        guild_name = "sigma"
-    if guild_name != "":
-        view.add_item(InactiveKickButton(embed_body, guild_name))
+
+    if config['jr_admin_role_id'] in ctx.member.role_ids:
+        view.add_item(InactiveKickButton(ctx.member.id, embed_body, config['guilds'][guild.upper()]['endpoint']))
+
     msg = await ctx.edit_initial_response(embed=embed, components=view)
     await view.start(msg)
 

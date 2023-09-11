@@ -33,6 +33,7 @@ class GuildInfo(TypedDict):
     guild_uuid: str
     bridge_uuid: str
     member_count_channel_id: int
+    endpoint: str
 
 
 class GTatsu(TypedDict):
@@ -46,9 +47,6 @@ class ScammerLookup(TypedDict):
     uuid: str
     is_scammer: bool
 
-class ScammerLookup(TypedDict):
-    uuid: str
-    is_scammer: bool
 
 class HelperAcademy(TypedDict):
     ticket_commands_channel_id: int
@@ -142,6 +140,8 @@ class Config(TypedDict, total=False):
     mod_chat_channel_id: int
     admin_chat_channel_id: int
     bot_log_channel_id: int
+
+    min_gexp: int
 
     guilds: dict[str, GuildInfo]
     colors: Colors
