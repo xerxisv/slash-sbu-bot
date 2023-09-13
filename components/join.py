@@ -1,3 +1,4 @@
+# TODO implement verification co-routine into Modal
 import aiohttp
 import hikari
 import miru
