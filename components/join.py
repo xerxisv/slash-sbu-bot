@@ -80,21 +80,3 @@ class JoinButtons(miru.View):
 async def startup_views(event: hikari.StartedEvent) -> None:
     view = JoinButtons()
     await view.start()
-
-
-@bot.listen()
-async def buttons(event: hikari.GuildMessageCreateEvent) -> None:
-    if not event.is_human:
-        return
-
-    me = bot.get_me()
-
-    # If the bot is mentioned
-    if me.id in event.message.user_mentions_ids and 780889323162566697 == event.member.id and event.message.content == "!joinmessage":
-        view = JoinButtons()
-        await event.message.respond(
-            embeds=hikari.Embed(title="Kyo is a lazy bum", description="bro didnt give me the embed"),
-            components=view
-        )
-
-
