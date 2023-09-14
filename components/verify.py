@@ -208,13 +208,30 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
         await ctx.respond(embed=error_embed(res.status))
         return
 
-    # Remove all member roles
+    await db.execute('''
+            INSERT OR REPLACE INTO "USERS"(uuid, discord_id, ign, guild_uuid, created_at) 
+            VALUES (:uuid, :discord_id, :ign, :guild_uuid, :created_at)
+        ''', {
+        "uuid": uuid,
+        "discord_id": member.id,
+        "ign": ign,
+        "guild_uuid": guild["_id"] if guild else None,
+        "created_at": int(time.time())
+    })
+
+    await db.commit()
+    await update_routine(ctx, member, config, db, uuid)
+
+    
+
+async def update_routine(ctx: tanjun.abc.Context, member: hikari.Member,
+                               config: Config, db: aiosqlite.Connection, uuid: str):
+    embed = None
     roles = [role for role in list(member.role_ids) if
              role not in config['verify']['guild_member_roles'] and role != config['verify']['member_role_id']]
 
     await member.edit(roles=roles, reason="Verification Process")
-
-    # Get player hypixel info and guild
+    
     try:
         # Fetch player data
         res = await get(f"https://api.hypixel.net/player?key={key}&uuid={uuid}")
@@ -230,7 +247,7 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
         await log_error(ctx, exception)
 
         await ctx.respond(embed=error_embed(res))
-        return
+        return False
 
     # Check player's socials
     try:
@@ -245,7 +262,7 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
                 color=config['colors']['error']
             )
             await ctx.respond(embed=embed)
-            return
+            return False
     except KeyError:
         embed = hikari.Embed(
             title="Error",
@@ -254,7 +271,7 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
             color=config['colors']['error']
         )
         await ctx.respond(embed=embed)
-        return
+        return False
     except TypeError:
         embed = hikari.Embed(
             title="Error",
@@ -267,7 +284,7 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
         await log_error(ctx, exception)
 
         await ctx.respond(embed=error_embed(''))
-        return
+        return False
 
     if guild is None or guild["name"].upper() not in config['guilds'].keys():
         embed = hikari.Embed(
@@ -299,26 +316,17 @@ async def verification_routine(ctx: tanjun.abc.Context, member: hikari.Member, i
             description="Something went wrong. Please try again later.",
             color=config['colors']['error']
         )
-
-    await db.execute('''
-            INSERT OR REPLACE INTO "USERS"(uuid, discord_id, ign, guild_uuid, created_at) 
-            VALUES (:uuid, :discord_id, :ign, :guild_uuid, :created_at)
-        ''', {
-        "uuid": uuid,
-        "discord_id": member.id,
-        "ign": ign,
-        "guild_uuid": guild["_id"] if guild else None,
-        "created_at": int(time.time())
-    })
-
-    await db.commit()
-
+        await ctx.respond(embed=embed)
+        return False
+    
     try:
         await member.edit(nickname=player["displayname"])
     except hikari.ForbiddenError:
         pass
-
+    
     await ctx.respond(embed=embed)
+    return True
+
 
 
 @tanjun.as_loader()
