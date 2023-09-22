@@ -11,9 +11,9 @@ from miru.ext import nav
 from utils import trigger_typing
 from utils.config import Config, ConfigHandler
 from utils.error_utils import log_error
-from utils.triggers.triggers import TriggerInfo, TriggersFileHandler
+from utils.user_triggers.user_triggers import TriggerInfo, UserTriggersFileHandler
 
-trigger_handler = TriggersFileHandler()
+trigger_handler = UserTriggersFileHandler()
 trigger_handler.load_triggers()
 
 ################
@@ -47,7 +47,7 @@ async def ct_add(ctx: tanjun.abc.SlashContext, trigger: str, user1: hikari.Membe
 
     args = locals()
     for key in list(args.keys()):
-        if re.match("user\d|response\d", key) is not None:
+        if re.match("user[1-5]|response[1-5]", key) is not None:
             continue
 
         del args[key]
@@ -58,10 +58,7 @@ async def ct_add(ctx: tanjun.abc.SlashContext, trigger: str, user1: hikari.Membe
         "enabled": True
     }
 
-    try:
-        await trigger_handler.add_trigger(trigger, trigger_info, overwrite)
-
-    except KeyError:
+    if not await trigger_handler.add_trigger(trigger, trigger_info, overwrite):
         embed = hikari.Embed(
             title='Error',
             description=f'Trigger `{trigger}` already exists. Set overwrite to True if you want to replace.',
@@ -69,13 +66,15 @@ async def ct_add(ctx: tanjun.abc.SlashContext, trigger: str, user1: hikari.Membe
         )
         await ctx.respond(embed=embed)
 
-    else:
-        embed = hikari.Embed(
-            title='Success',
-            description='Chat trigger added successfully',
-            color=config['colors']['success']
-        )
-        await ctx.respond(embed=embed)
+        return
+
+
+    embed = hikari.Embed(
+        title='Success',
+        description='Chat trigger added successfully',
+        color=config['colors']['success']
+    )
+    await ctx.respond(embed=embed)
 
 
 @tanjun.with_str_slash_option("trigger", "The trigger to remove")
@@ -122,7 +121,7 @@ async def ct_toggle(ctx: tanjun.abc.SlashContext, trigger: str, config: Config =
 
 @ct_slash_group.as_sub_command("list", "List all the triggers")
 async def ct_list(ctx: tanjun.abc.SlashContext, config: Config = alluka.inject(type=Config)):
-    triggers = trigger_handler.get_triggers()
+    triggers = trigger_handler.triggers()
 
     if (triggers_num := len(triggers)) == 0:
         embed = hikari.Embed(
@@ -173,7 +172,7 @@ async def ct_list(ctx: tanjun.abc.SlashContext, config: Config = alluka.inject(t
 @ct_json_slash_group.as_sub_command("get", "Get the json for the given trigger")
 async def json_get(ctx: tanjun.abc.SlashContext, trigger: str, config: Config = alluka.inject(type=Config)):
     trigger = trigger.upper()
-    if trigger not in trigger_handler.get_triggers():
+    if trigger not in trigger_handler.triggers():
         embed = hikari.Embed(
             title='Error',
             description=f'Trigger `{trigger}` not found.',
@@ -182,7 +181,7 @@ async def json_get(ctx: tanjun.abc.SlashContext, trigger: str, config: Config = 
         await ctx.respond(embed=embed)
         return
 
-    json_str = json.dumps(trigger_handler.get_triggers()[trigger], indent=4)
+    json_str = json.dumps(trigger_handler.triggers()[trigger], indent=4)
     attachment = hikari.Bytes(bytes(json_str, encoding='utf-8'), f'{trigger}.json')
     await ctx.respond(attachment=attachment)
 
@@ -198,7 +197,7 @@ async def json_set(ctx: tanjun.abc.SlashContext, trigger: str, attachment: hikar
         fs = await attachment.read()
         dct = json.loads(fs)
 
-        trigger_handler.get_triggers()[trigger] = dct
+        trigger_handler.triggers()[trigger] = dct
         trigger_handler.reload_triggers()
     except Exception as exception:
         await log_error(ctx, exception)
@@ -222,7 +221,7 @@ async def json_set(ctx: tanjun.abc.SlashContext, trigger: str, attachment: hikar
 @ct_remove.with_str_autocomplete("trigger")
 @ct_toggle.with_str_autocomplete("trigger")
 async def trigger_autocomplete(ctx: tanjun.abc.AutocompleteContext, value: str) -> None:
-    triggers = trigger_handler.get_triggers()
+    triggers = trigger_handler.triggers()
 
     choices = {}
 

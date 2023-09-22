@@ -11,6 +11,7 @@ import tanjun
 from colorama import Fore
 from dotenv import load_dotenv
 
+from utils.cmd_triggers.cmd_triggers import CommandTriggersFileHandler
 from utils.config.config import Config, ConfigHandler
 from utils.database.connection import DBConnection
 
@@ -26,7 +27,7 @@ asyncio.run(ConfigHandler().load_config())
 asyncio.run(DBConnection().connect_db())
 
 from utils.handlers import is_warn, handle_warn, is_bridge_message, handle_tatsu
-from utils.triggers.triggers import TriggersFileHandler
+from utils.user_triggers.user_triggers import UserTriggersFileHandler
 
 # trigger_handler = TriggersFileHandler()
 # TriggersFileHandler().load_triggers()
@@ -145,6 +146,7 @@ miru.install(bot)
 
 @bot.listen(hikari.StartedEvent)
 async def on_started(_) -> None:
+    CommandTriggersFileHandler().load_triggers()
     print(f'{Fore.YELLOW}{bot.get_me()} is ready')
 
 
@@ -159,8 +161,11 @@ async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
     if is_warn(event.message.content):
         await handle_warn(event, ConfigHandler().get_config())
 
-    if TriggersFileHandler().is_trigger(event.message.content):
-        await TriggersFileHandler().handle_trigger(event)
+    elif CommandTriggersFileHandler().is_trigger(event.message.content):
+        await CommandTriggersFileHandler().handle_trigger(event)
+
+    elif UserTriggersFileHandler().is_trigger(event.message.content):
+        await UserTriggersFileHandler().handle_trigger(event)
 
 
 if __name__ == "__main__":
