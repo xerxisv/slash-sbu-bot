@@ -1,6 +1,5 @@
 import asyncio
 import os
-import typing
 
 import aiosqlite
 import colorama
@@ -13,6 +12,8 @@ from dotenv import load_dotenv
 
 from utils.config.config import Config, ConfigHandler
 from utils.database.connection import DBConnection
+
+from components.join_buttons import JoinButtons
 
 #######################
 #    General Setup    #
@@ -114,7 +115,7 @@ async def parser_error_hook(ctx: tanjun.abc.MessageContext, error: tanjun.Parser
 
 intents = hikari.Intents.ALL_UNPRIVILEGED | hikari.Intents.MESSAGE_CONTENT
 
-bot: typing.Any = hikari.impl.GatewayBot(os.getenv('TOKEN'), intents=intents)
+bot = hikari.impl.GatewayBot(os.getenv('TOKEN'), intents=intents)
 client: tanjun.Client = tanjun.Client.from_gateway_bot(bot, declare_global_commands=ConfigHandler().get_config()[
     'server_id']) \
     .add_prefix("+").set_hooks(hooks).add_check(tanjun.checks.GuildCheck())
@@ -145,6 +146,9 @@ miru.install(bot)
 
 @bot.listen(hikari.StartedEvent)
 async def on_started(_) -> None:
+    view = JoinButtons(ConfigHandler().get_config())
+    await view.start()
+
     print(f'{Fore.YELLOW}{bot.get_me()} is ready')
 
 
