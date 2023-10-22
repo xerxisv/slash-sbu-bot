@@ -34,6 +34,7 @@ class GuildInfo(TypedDict):
     bridge_uuid: str
     member_count_channel_id: int
     endpoint: str
+    guild_rank: str
 
 
 class GTatsu(TypedDict):

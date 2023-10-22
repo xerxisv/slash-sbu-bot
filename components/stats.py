@@ -1,3 +1,4 @@
+import aiohttp
 import aiosqlite
 import alluka
 import hikari
@@ -14,6 +15,17 @@ from utils.database import convert_to_user
 ###############
 #   Buttons   #
 ###############
+
+async def set_rank(endpoint, username, rank):
+    async with aiohttp.ClientSession() as session:
+        r = await session.post(
+            url=endpoint,
+            headers={'Content-Type': 'application/json'},
+            json={'username': username, 'rank': rank}
+        )
+        response = await r.json()
+        r.close()
+        return bool(response['success'])
 
 class RoleButton(miru.Button):
     def __init__(self, role: str, user_id: int):
@@ -50,7 +62,7 @@ class AcceptButton(miru.Button):
         self.user_id = user_id
         self.config = ConfigHandler().get_config()
 
-    async def callback(self, ctx: miru.ViewContext) -> None:
+    async def callback(self, ctx: miru.ViewContext, db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)) -> None:
         if ctx.member.id != self.user_id:
             return
 
@@ -64,6 +76,25 @@ class AcceptButton(miru.Button):
         roles = set(roles)
 
         await ctx.member.edit(roles=roles, reason='Weight Roles')
+
+        if not self.config['jr_mod_role_id'] in roles:
+            for guild in self.config['guilds']:
+                if self.config['guilds'][guild]['member_role_id'] in roles:
+                    endpoint = self.config['guilds'][guild]['endpoint'] + "setrank"
+                    cursor: aiosqlite.Cursor
+                    async with db.cursor() as cursor:
+                        await cursor.execute('''
+                            SELECT *
+                            FROM "USERS"
+                            WHERE discord_id=:discord_id
+                        ''', {
+                            "discord_id": ctx.author.id
+                        })
+                        res = await cursor.fetchone()
+
+                    user = convert_to_user(res)
+                    await set_rank(endpoint, user['ign'], self.config['guilds'][guild]['guild_rank'])
+
 
         embed = hikari.Embed(
             title='Success',

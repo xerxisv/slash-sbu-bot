@@ -121,13 +121,15 @@
                 "role_id": 0,
                 "weight_req": 0,
                 "name": "",
-                "previous": []
+                "previous": [],
+                "guild_rank": ""
             },
             "weight role 2": {
                 "role_id": 0,
                 "weight_req": 0,
                 "name": "",
-                "previous": [0]
+                "previous": [0],
+                "guild_rank": ""
             }
         }
     },
