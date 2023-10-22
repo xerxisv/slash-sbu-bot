@@ -44,10 +44,6 @@ class ScammerLookup(TypedDict):
     is_scammer: bool
 
 
-class HelperAcademy(TypedDict):
-    ticket_commands_channel_id: int
-    lookup_scammers: dict[str, ScammerLookup]
-
 
 class Requirements(TypedDict):
     weight: int
@@ -146,7 +142,6 @@ class Config(TypedDict, total=False):
     crisis: Crisis
     files: Files
     gtatsu: GTatsu
-    helper_academy: HelperAcademy
     masters: Masters
     misc: Misc
     moderation: Moderation
