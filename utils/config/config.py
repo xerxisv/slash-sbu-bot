@@ -1,13 +1,9 @@
 import json
 from typing import TypedDict
 
-from utils import Singleton
-
 import aiofiles
 
-
-class BanList(TypedDict):
-    channel_id: int
+from utils import Singleton
 
 
 class Colors(TypedDict):
@@ -57,6 +53,7 @@ class Requirements(TypedDict):
     weight: int
     dungeon_lvl: int
     slayer_xp: int
+
 
 class Masters(TypedDict):
     main: Requirements
@@ -146,7 +143,6 @@ class Config(TypedDict, total=False):
     guilds: dict[str, GuildInfo]
     colors: Colors
     modules: dict[str, bool]
-    banlist: BanList
     crisis: Crisis
     files: Files
     gtatsu: GTatsu

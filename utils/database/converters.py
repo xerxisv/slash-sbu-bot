@@ -8,7 +8,6 @@ class BannedMemberInfo(TypedDict):
     reason: str
     moderator: int
     banned_at: int
-    message: int
 
 
 def convert_to_banned(query_res: Row) -> BannedMemberInfo:
@@ -16,8 +15,7 @@ def convert_to_banned(query_res: Row) -> BannedMemberInfo:
         "uuid": query_res[0],
         "reason": query_res[1],
         "moderator": query_res[2],
-        "banned_at": query_res[3],
-        "message": query_res[4]
+        "banned_at": query_res[3]
     }
 
 
