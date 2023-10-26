@@ -5,22 +5,27 @@ import miru
 import tanjun
 
 from utils.config import Config, ConfigHandler
+from utils.error_utils import log_error
 
 
 #######################
 #  Functions & Views  #
 #######################
 
-async def invite_member(endpoint, username):
-    async with aiohttp.ClientSession() as session:
-        r = await session.post(
-            url=endpoint,
-            headers={'Content-Type': 'application/json'},
-            json={'username': username}
-        )
-        response = await r.json()
-        r.close()
-        return bool(response['success'])
+async def invite_member(ctx, endpoint, username):
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(connect=5)) as session:
+        try:
+            r = await session.post(
+                url=endpoint,
+                headers={'Content-Type': 'application/json'},
+                json={'username': username}
+            )
+            response = await r.json()
+            r.close()
+            return bool(response['success'])
+        except Exception as exception:
+            await log_error(ctx, exception)
+            return False
 
 
 class JoinModal(miru.Modal):
@@ -33,29 +38,20 @@ class JoinModal(miru.Modal):
                           style=hikari.TextInputStyle.SHORT)
 
     async def callback(self, ctx: miru.ModalContext) -> None:
-        # await ctx.defer()
-        success = await invite_member(self.invite_endpoint, self.name.value)
+        await ctx.defer(hikari.ResponseType.DEFERRED_MESSAGE_CREATE, flags=hikari.MessageFlag.EPHEMERAL)
+        success = await invite_member(ctx, self.invite_endpoint, self.name.value)
+
+        embed = hikari.Embed(title="Join Request")
 
         if success:
-            embed = hikari.Embed(
-                title="Join Request",
-                description=f"Successfully invited {self.name.value} to the guild. If you haven't been invited, please create a support ticket",
-                colour=self.config['colors']['success']
-            )
-            await ctx.respond(
-                embed=embed,
-                flags=hikari.MessageFlag.EPHEMERAL
-            )
+            embed.description=(f"Successfully invited {self.name.value} to the guild. If you haven't been invited, "
+                               f"please create a support ticket")
+            embed.colour=self.config['colors']['success']
         else:
-            embed = hikari.Embed(
-                title="Join Request",
-                description=f"An internal error has occurred, please create a support ticket",
-                colour=self.config['colors']['error']
-            )
-            await ctx.respond(
-                embed=embed,
-                flags=hikari.MessageFlag.EPHEMERAL
-            )
+            embed.description=f"An internal error has occurred, please create a support ticket"
+            embed.colour=self.config['colors']['error']
+
+        await ctx.respond(embed=embed, flags=hikari.MessageFlag.EPHEMERAL)
 
 
 class JoinButtons(miru.View):
@@ -83,8 +79,8 @@ class JoinButtons(miru.View):
         endpoint = self.config['guilds']["SB LAMBDA PI"]['endpoint'] + "invite"
         await ctx.respond_with_modal(JoinModal(endpoint, "Join Lambda Pi", self.config))
 
-    @miru.button(label="Random", custom_id="random_guild")
-    async def sbu_uni(self, button: miru.Button, ctx: miru.ViewContext) -> None:
+    @miru.button(label="Random", custom_id="random", row=1, style=hikari.ButtonStyle.SUCCESS)
+    async def random(self, _: miru.Button, ctx: miru.ViewContext) -> None:
         endpoint = self.config['guilds']["SB SIGMA CHI"]['endpoint'] + "invite"
         await ctx.respond_with_modal(JoinModal(endpoint, "Join a random guild", self.config))
 
