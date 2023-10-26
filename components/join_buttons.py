@@ -6,6 +6,7 @@ import tanjun
 
 from utils.config import Config, ConfigHandler
 
+
 #######################
 #  Functions & Views  #
 #######################
@@ -82,6 +83,11 @@ class JoinButtons(miru.View):
         endpoint = self.config['guilds']["SB LAMBDA PI"]['endpoint'] + "invite"
         await ctx.respond_with_modal(JoinModal(endpoint, "Join Lambda Pi", self.config))
 
+    @miru.button(label="Random", custom_id="random_guild")
+    async def sbu_uni(self, button: miru.Button, ctx: miru.ViewContext) -> None:
+        endpoint = self.config['guilds']["SB SIGMA CHI"]['endpoint'] + "invite"
+        await ctx.respond_with_modal(JoinModal(endpoint, "Join a random guild", self.config))
+
 
 ################
 #   Commands   #
@@ -106,6 +112,7 @@ async def join_embed(ctx: tanjun.abc.SlashContext):
 
 
 component.load_from_scope()
+
 
 ###############
 #   Loaders   #
