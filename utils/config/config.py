@@ -65,9 +65,14 @@ class Moderation(TypedDict):
     appeals_invite: str
 
 
+class RepRoleThresholds(TypedDict):
+    threshold: int
+    role: int
+
 class Rep(TypedDict):
     craft_rep_channel_id: int
     carry_rep_channel_id: int
+    craft_rep_award_thresholds: list[RepRoleThresholds]
 
 
 class WeightRoleInfo(TypedDict):

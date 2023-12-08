@@ -110,7 +110,13 @@
 
     "rep": {
         "craft_rep_channel_id": 0,
-        "carry_rep_channel_id": 0
+        "carry_rep_channel_id": 0,
+        "craft_rep_award_thresholds": [
+            {
+                "threshold": 0,
+                "role": 0
+            }
+        ]
     },
 
     "stats": {

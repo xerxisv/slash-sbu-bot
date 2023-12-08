@@ -1,17 +1,60 @@
 import time
 from math import ceil
 
-import aiosqlite
 import alluka
 import hikari
 import tanjun
-from aiosqlite import Connection
+from aiosqlite import Connection, Cursor
 from miru.ext import nav
 
 from utils.checks.role_checks import jr_admin_check
 from utils.config import Config
 from utils.database import convert_to_rep
 from utils.error_utils import log_error
+
+
+####################
+#  Misc Functions  #
+####################
+
+async def award_rep_role(receiver: hikari.Member, config: Config, db: Connection):
+    cursor: Cursor
+    async with db.cursor() as cursor:
+        await cursor.execute('''
+            SELECT COUNT(0)
+            FROM "REPUTATION"
+            WHERE receiver=:receiver
+        ''', {"receiver": receiver.id})
+
+        rep_num = (await cursor.fetchone())[0]
+
+    if rep_num < 25:
+        return
+
+    roles_to_add = [rep_role for rep_role in config['rep']['craft_rep_award_thresholds'] if
+                    rep_num > rep_role['threshold']]
+
+    receiver_roles = list(receiver.role_ids)
+    added_roles = []
+    for role_info in roles_to_add:
+        if role_info['role'] in receiver_roles:
+            continue
+
+        receiver_roles.append(role_info['role'])
+        added_roles.append(role_info)
+
+    await receiver.edit(roles=receiver_roles, reason="Reputation Award")
+
+    for role_info in added_roles:
+        embed = hikari.Embed()
+        embed.title = "Reputation Award"
+        embed.description = (f"{receiver.mention} was given the <@&{role_info['role']}> role "
+                             f"for reaching {role_info['threshold']} total craft reps! :partying_face:")
+        embed.color = config['colors']['success']
+        embed.set_thumbnail(receiver.display_avatar_url)
+
+        await receiver.get_guild().get_channel(config['rep']['craft_rep_channel_id']).send(embed=embed)
+
 
 ################
 #   Commands   #
@@ -27,7 +70,7 @@ component.add_slash_command(rep_slash_group)
 @tanjun.with_str_slash_option("comments", "Brief description of the rep")
 @tanjun.with_user_slash_option("receiver", "The user to give rep to")
 @rep_slash_group.as_sub_command("give", "Give reputation to a user", always_defer=True, default_to_ephemeral=True)
-async def rep_give(ctx: tanjun.abc.SlashContext, receiver: hikari.User, comments: str,
+async def rep_give(ctx: tanjun.abc.SlashContext, receiver: hikari.Member, comments: str,
                    config: Config = tanjun.inject(), db: Connection = tanjun.inject()):
     craft_ch = config['rep']['craft_rep_channel_id']
     carry_ch = config['rep']['carry_rep_channel_id']
@@ -54,13 +97,13 @@ async def rep_give(ctx: tanjun.abc.SlashContext, receiver: hikari.User, comments
         await ctx.respond(embed=embed)
         return
 
-    cursor: aiosqlite.Cursor
+    cursor: Cursor
     async with db.cursor() as cursor:
+        # Fetch new rep ID
         await cursor.execute('''
             SELECT max(rep_id)
             FROM "REPUTATION"
         ''')
-
         rep_id = (await cursor.fetchone())[0] + 1
 
     rep_type = 0 if ctx.channel_id == craft_ch else 1
@@ -99,6 +142,8 @@ async def rep_give(ctx: tanjun.abc.SlashContext, receiver: hikari.User, comments
 
     await ctx.respond(embed=embed)
 
+    await award_rep_role(receiver, config, db)
+
 
 @tanjun.with_check(jr_admin_check)
 @tanjun.with_int_slash_option("rep_id", "The ID of the rep to remove")
@@ -106,7 +151,7 @@ async def rep_give(ctx: tanjun.abc.SlashContext, receiver: hikari.User, comments
                                 default_to_ephemeral=True)
 async def rep_remove(ctx: tanjun.abc.SlashContext, rep_id: int,
                      config: Config = tanjun.inject(), db: Connection = tanjun.inject()):
-    cursor: aiosqlite.Cursor
+    cursor: Cursor
     # Ensure that rep with given ID exists
     async with await db.cursor() as cursor:
         await cursor.execute('''
@@ -164,11 +209,11 @@ async def rep_remove(ctx: tanjun.abc.SlashContext, rep_id: int,
 @rep_slash_group.as_sub_command("list", "Lists the reps a user has received", always_defer=True)
 async def rep_list(ctx: tanjun.abc.SlashContext, carrier: hikari.User, crafter: hikari.User,
                    config: Config = alluka.inject(type=Config),
-                   db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
+                   db: Connection = alluka.inject(type=Connection)):
     user = carrier if carrier is not None else crafter
     rep_type = 0 if crafter is not None else 1
 
-    cursor: aiosqlite.Cursor = await db.cursor()
+    cursor: Cursor = await db.cursor()
     await cursor.execute('''
         SELECT *
         FROM "REPUTATION"
@@ -194,7 +239,7 @@ async def rep_list(ctx: tanjun.abc.SlashContext, carrier: hikari.User, crafter: 
             title=f"{'Carry' if rep_type else 'Craft'} Reps",
             color=config['colors']['primary']
         )
-        for rep in data[(page-1) * 10:page * 10]:
+        for rep in data[(page - 1) * 10:page * 10]:
             rep = convert_to_rep(rep)
 
             embed.add_field(name=f"Rep #{rep['rep_id']}",
