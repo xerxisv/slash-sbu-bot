@@ -184,9 +184,11 @@ async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
 
     await message.add_reaction('✅')
     await message.add_reaction('❌')
-    thread_id = await ctx.rest.create_message_thread(channel.id, message.id,
-                                         f"Suggestion No. {suggestion_num}",
-                                         auto_archive_duration=datetime.timedelta(days=3))
+    thread_id = await ctx.rest.create_message_thread(
+        channel.id, message.id,
+        f"Suggestion No. {suggestion_num}",
+        auto_archive_duration=datetime.timedelta(days=3)
+    )
 
     embed = hikari.Embed(
         title="Success",
@@ -338,8 +340,7 @@ async def suggestion_list(ctx: tanjun.abc.SlashContext, author: hikari.User, ans
         for suggestion in res[(page - 1) * 10:page * 10]:
             suggestion = convert_to_suggestion(suggestion)
             embed.add_field(name=f"Suggestion **#{suggestion['suggestion_number']}**",
-                            value=f"`{suggestion['suggestion']}`\n"
-                                  f"*By <@{suggestion['author_id']}>*",
+                            value=f"*<@{suggestion['author_id']}>*: ```{suggestion['suggestion']}```",
                             inline=False
                             )
 
