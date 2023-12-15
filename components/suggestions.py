@@ -150,8 +150,8 @@ async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
 
     if len(suggestion) > 500:
         embed = hikari.Embed(
-            title='Error',
-            description='Suggestion can\'t be longer than 500 characters',
+            title="Error",
+            description="Suggestion can't be longer than 500 characters",
             color=config['colors']['error']
         )
         await ctx.respond(embed=embed)
@@ -159,29 +159,30 @@ async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
 
     cursor: aiosqlite.Cursor
     async with db.cursor() as cursor:
-        await cursor.execute('''
+        await cursor.execute("""
             SELECT max(suggestion_number)
             FROM "SUGGESTIONS"
-        ''')
+        """)
         suggestion_num = (await cursor.fetchone())[0] + 1
 
     # Create embed
     suggestion_embed = hikari.Embed(
-        title=f'Suggestion',
-        description=f'{suggestion}',
+        title=f"Suggestion",
+        description=suggestion,
         timestamp=datetime.datetime.now(tz=datetime.timezone.utc),
         color=config['colors']['primary']
     )
 
     # Set author icon if there is one
     if ctx.message.author.display_avatar_url is not None:
-        suggestion_embed.set_author(name=f'Suggested by {ctx.message.author}',
-                                    icon=ctx.message.author.display_avatar_url)
-    else:
-        suggestion_embed.set_author(name=f'Suggested by {ctx.message.author}')
+        suggestion_embed.set_author(name=f"Suggested by {ctx.message.author}",
+                                    icon=await ctx.message.author.display_avatar_url.read())
 
-    suggestion_embed.set_footer(text=f'Suggestion number {suggestion_num}')
-    suggestion_embed.set_thumbnail(config['logo_url'])
+    else:
+        suggestion_embed.set_author(name=f"Suggested by {ctx.message.author}")
+
+    suggestion_embed.set_footer(text=f"Suggestion number {suggestion_num}")
+    # suggestion_embed.set_thumbnail(config['logo_url'])
 
     channel = ctx.get_guild().get_channel(config['suggestions']['suggestions_channel_id'])
     message: hikari.Message = await channel.send(embed=suggestion_embed)
@@ -216,9 +217,9 @@ async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
 
 
 @tanjun.with_concurrency_limit("database_commands")
-@tanjun.with_str_slash_option('reason', 'The reason for approving', default=None)
-@tanjun.with_int_slash_option('suggestion', 'The suggestion\'s ID to approve', key='suggestion_id')
-@suggestion_group.as_sub_command('approve', 'Approves the given suggestion', always_defer=True)
+@tanjun.with_str_slash_option("reason", "The reason for approving", default=None)
+@tanjun.with_int_slash_option("suggestion", "The suggestion's ID to approve", key="suggestion_id")
+@suggestion_group.as_sub_command("approve", "Approves the given suggestion", always_defer=True)
 async def suggestion_approve(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str,
                              config: Config = alluka.inject(type=Config),
                              db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
@@ -226,9 +227,9 @@ async def suggestion_approve(ctx: tanjun.abc.SlashContext, suggestion_id: int, r
 
 
 @tanjun.with_concurrency_limit("database_commands")
-@tanjun.with_str_slash_option('reason', 'The reason for denying', default=None)
-@tanjun.with_int_slash_option('suggestion', 'The suggestion\'s ID to deny', key='suggestion_id')
-@suggestion_group.as_sub_command('deny', 'Denies the given suggestion', always_defer=True)
+@tanjun.with_str_slash_option("reason", "The reason for denying", default=None)
+@tanjun.with_int_slash_option("suggestion", "The suggestion's ID to deny", key="suggestion_id")
+@suggestion_group.as_sub_command("deny", "Denies the given suggestion", always_defer=True)
 async def suggestion_deny(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str,
                           config: Config = alluka.inject(type=Config),
                           db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
@@ -236,26 +237,26 @@ async def suggestion_deny(ctx: tanjun.abc.SlashContext, suggestion_id: int, reas
 
 
 @tanjun.with_concurrency_limit("database_commands")
-@tanjun.with_int_slash_option('suggestion', 'The suggestion\'s ID to remove', key='suggestion_id')
-@suggestion_group.as_sub_command('delete', 'Deletes the given suggestion', always_defer=True)
+@tanjun.with_int_slash_option("suggestion", "The suggestion's ID to remove", key="suggestion_id")
+@suggestion_group.as_sub_command("delete", "Deletes the given suggestion", always_defer=True)
 async def suggestion_delete(ctx: tanjun.abc.SlashContext, suggestion_id: int,
                             config: Config = alluka.inject(type=Config),
                             db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
     cursor: aiosqlite.Cursor
     async with db.cursor() as cursor:
-        await cursor.execute('''
+        await cursor.execute("""
             SELECT *
             FROM "SUGGESTIONS"
             WHERE suggestion_number=:suggestion_id
-        ''', {
+        """, {
             "suggestion_id": suggestion_id
         })
         res = await cursor.fetchone()
     # Check if suggestion with given ID exists
     if res is None:
         embed = hikari.Embed(
-            title='Error',
-            description=f'Suggestion with ID {suggestion_id} not found',
+            title="Error",
+            description=f"Suggestion with ID {suggestion_id} not found",
             color=config['colors']['error']
         )
         await ctx.respond(embed=embed)
@@ -264,16 +265,16 @@ async def suggestion_delete(ctx: tanjun.abc.SlashContext, suggestion_id: int,
     suggestion = convert_to_suggestion(res)
 
     # Delete suggestion
-    await db.execute('''
+    await db.execute("""
         DELETE
         FROM "SUGGESTIONS"
         WHERE suggestion_number=:suggestion_id
-    ''', {
+    """, {
         "suggestion_id": suggestion_id
     })
     await db.commit()
 
-    msg = 'Suggestion deleted'
+    msg = "Suggestion deleted"
     try:
         await (await ctx.get_guild()
                .get_channel(config['suggestions']['suggestions_channel_id'])
@@ -288,7 +289,7 @@ async def suggestion_delete(ctx: tanjun.abc.SlashContext, suggestion_id: int,
               f"was not found in <#{config['suggestions']['suggestions_channel_id']}>. Please delete manually"
 
     embed = hikari.Embed(
-        title='Success',
+        title="Success",
         description=msg,
         color=config['colors']['success']
     )
@@ -296,38 +297,43 @@ async def suggestion_delete(ctx: tanjun.abc.SlashContext, suggestion_id: int,
 
 
 @tanjun.with_concurrency_limit("database_commands")
-@tanjun.with_bool_slash_option('approved', 'Lists approved/denied suggestion', default=None)
-@tanjun.with_bool_slash_option('answered', 'Lists answered/unanswered suggestions', default=None)
-@tanjun.with_user_slash_option('author', 'The author of the suggestion', default=None)
-@suggestion_group.as_sub_command('list', 'Lists suggestions')
-async def suggestion_list(ctx: tanjun.abc.SlashContext, author: hikari.User, answered: bool, approved: bool,
-                          config: Config = alluka.inject(type=Config),
-                          db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
-    script = '''
+@tanjun.with_int_slash_option("option", "Which suggestions to list", default=None,
+                              choices=dict(All=0, Pending=1, Approved=2, Denied=3))
+@tanjun.with_user_slash_option("author", "The author of the suggestion", default=None)
+@suggestion_group.as_sub_command("list", "Lists suggestions")
+async def suggestion_list(ctx: tanjun.abc.SlashContext, author: hikari.User, option: str,
+                          config: Config = tanjun.inject(),
+                          db: aiosqlite.Connection = tanjun.inject()):
+    # 4 cases. no user & no option | no user & option | user & no option | user & option
+    script = f"""
         SELECT *
         FROM "SUGGESTIONS"
-    '''
+    """
 
-    if author is not None:
-        script += '\nWHERE author_id=:author_id'
-    elif answered is not None:
-        script += '\nWHERE answered=:answered'
-    elif approved is not None:
-        script += '\nWHERE approved=:approved'
+    if author or option:  # If either one is given, we need a WHERE clause
+        script += "\nWHERE "
+
+    if author:  # Add author filter + an AND if 'option' is not zero
+        script += f"author_id=:author_id{' AND ' if option else ''}"
+
+    if option == 1:  # Add 'option' to the query
+        script += "answered == 0"
+    elif option == 2:
+        script += "answered == 1 AND approved == 1"
+    elif option == 3:
+        script += "answered == 1 AND approved == 0"
+
+    script += "\nORDER BY created_at DESC"
 
     cursor: aiosqlite.Cursor
     async with db.cursor() as cursor:
-        await cursor.execute(script, {
-            "author_id": author.id if author else None,
-            "answered": 1 if answered else 0,
-            "approved": 1 if approved else 0
-        })
+        await cursor.execute(script, {"author_id": author.id if author else None})
         res = await cursor.fetchall()
 
     if (rows := len(list(res))) == 0:
         embed = hikari.Embed(
-            title='Nothing to show',
-            description='No suggestions passed the filter',
+            title="Nothing to show",
+            description="No suggestions passed the filters",
             color=config['colors']['secondary']
         )
         await ctx.respond(embed=embed)
@@ -337,21 +343,36 @@ async def suggestion_list(ctx: tanjun.abc.SlashContext, author: hikari.User, ans
     pages_num = ceil(rows / 10)
     for page in range(1, pages_num + 1):
         embed = hikari.Embed(
-            title='Reps',
+            title="Suggestions",
             color=config['colors']['primary']
         )
 
         for suggestion in res[(page - 1) * 10:page * 10]:
             suggestion = convert_to_suggestion(suggestion)
-            embed.add_field(name=f"Suggestion **#{suggestion['suggestion_number']}**",
-                            value=f"*<@{suggestion['author_id']}>*: ```{suggestion['suggestion']}```",
-                            inline=False
-                            )
+
+            name = f"__Suggestion **#{suggestion['suggestion_number']}**__ "
+            value = f"*\\- Created By: <@{suggestion['author_id']}>*\n"
+
+            if suggestion['answered']:
+                name += "✅" if suggestion['approved'] else "❌"
+                value += "*\\- " + (
+                    "Approved" if suggestion['approved'] else "Denied") + f" By: <@{suggestion['approved_by']}>*\n"
+
+            value += (
+                f"*\\- Message Link: https://discord.com/channels/{config['server_id']}/"
+                f"{config['suggestions']['suggestions_channel_id']}/{suggestion['message_id']}*"
+                f"```{suggestion['suggestion']}```")
+
+            embed.add_field(
+                name=name,
+                value=value,
+                inline=False
+            )
 
         pages.append(embed)
 
     navigator = nav.NavigatorView(pages=pages, timeout=30)
-    await navigator.send(ctx.interaction)
+    await navigator.send(ctx.interaction, ephemeral=True)
 
 
 @tanjun.as_loader()
