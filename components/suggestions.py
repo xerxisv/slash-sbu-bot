@@ -77,10 +77,14 @@ async def answer(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, 
         await message.edit(embed=suggestion_embed)
 
     if suggestion['thread_id']:
-        if thread := ctx.get_guild().get_channel(suggestion['thread_id']):
+        thread = ctx.get_guild().get_channel(suggestion['thread_id'])
+        if not thread:
+            thread = await ctx.rest.fetch_channel(suggestion['thread_id'])
+
+        try:
             await thread.edit(locked=True, archived=True)
-        else:
-            await (await ctx.rest.fetch_channel(suggestion['thread_id'])).edit(locked=True, archived=True)
+        except hikari.BadRequestError:
+            pass
 
     approved_embed = hikari.Embed(
         title=title,
