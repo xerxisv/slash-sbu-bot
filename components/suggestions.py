@@ -301,9 +301,9 @@ async def suggestion_delete(ctx: tanjun.abc.SlashContext, suggestion_id: int,
 
 
 @tanjun.with_concurrency_limit("database_commands")
-@tanjun.with_int_slash_option("option", "Which suggestions to list", default=None,
-                              choices=dict(All=0, Pending=1, Approved=2, Denied=3))
 @tanjun.with_user_slash_option("author", "The author of the suggestion", default=None)
+@tanjun.with_int_slash_option("option", "Which suggestions to list", default=1,
+                              choices=dict(All=0, Pending=1, Approved=2, Denied=3))
 @suggestion_group.as_sub_command("list", "Lists suggestions")
 async def suggestion_list(ctx: tanjun.abc.SlashContext, author: hikari.User, option: str,
                           config: Config = tanjun.inject(),
