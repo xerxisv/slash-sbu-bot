@@ -18,8 +18,9 @@ from utils.error_utils import log_error
 #    Commands' Functions    #
 #############################
 
-async def answer(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, is_approved: bool, config: Config,
-                 db: aiosqlite.Connection):
+async def answer_suggestion(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, is_approved: bool, dm: bool,
+                            config: Config,
+                            db: aiosqlite.Connection):
     cursor: aiosqlite.Cursor
     async with db.cursor() as cursor:
         await cursor.execute('''
@@ -42,11 +43,11 @@ async def answer(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, 
 
     suggestion = convert_to_suggestion(res)
 
-    title = 'Approved' if is_approved else 'Denied'
+    answer = 'Approved' if is_approved else 'Denied'
     color = config['colors']['success'] if is_approved else config['colors']['error']
 
     suggestion_embed = hikari.Embed(
-        title=title,
+        title=answer,
         description=f"{suggestion['suggestion']}",
         timestamp=datetime.datetime.now(tz=datetime.timezone.utc),
         color=color
@@ -60,11 +61,11 @@ async def answer(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, 
 
     sg_author_icon = None
     if isinstance(sg_author, hikari.User):
-        sg_author_icon = str(sg_author.display_avatar_url)
+        sg_author_icon = await sg_author.display_avatar_url.read()
 
     suggestion_embed.set_author(name=f'Suggested by {sg_author}', icon=sg_author_icon)
     suggestion_embed.add_field(name="Reason", value=f"{reason}", inline=False)
-    suggestion_embed.set_footer(text=f'Suggestion number {suggestion_id} | {title} by {ctx.author}')
+    suggestion_embed.set_footer(text=f'Suggestion number {suggestion_id} | {answer} by {ctx.author}')
     suggestion_embed.set_thumbnail(config['logo_url'])
 
     channel = ctx.get_guild().get_channel(config['suggestions']['suggestions_channel_id'])
@@ -86,45 +87,46 @@ async def answer(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, 
         except hikari.BadRequestError:
             pass
 
-    approved_embed = hikari.Embed(
-        title=title,
-        description=f'Suggestion number {suggestion_id} {title.lower()} successfully.',
+    answered_embed = hikari.Embed(
+        title=answer,
+        description=f"Suggestion number {suggestion_id} {answer.lower()} successfully.\n{message.make_link(config['server_id'])}",
         timestamp=datetime.datetime.now(tz=datetime.timezone.utc),
         color=config['colors']['success']
     )
-    try:
-        # Try DMing the user
-        await sg_author.send(embed=suggestion_embed)
-    except (hikari.InternalServerError, hikari.ForbiddenError, AttributeError):
-        # DMing can throw because: API error, user having DMs closed/ bad intents or suggestion_author is an int
-        approved_embed.add_field(name="Direct Message", value=f"User could not be dmed", inline=False)
 
-    except Exception as exception:
-        # Any other error will be sent to the logs
-        approved_embed.add_field(name="Direct Message", value=f"User could not be dmed", inline=False)
-        await log_error(ctx, exception)
+    if dm:
+        try:
+            # Try DMing the user
+            await sg_author.send(embed=suggestion_embed)
+        except (hikari.InternalServerError, hikari.ForbiddenError, AttributeError):
+            # DMing can throw because: API error, user having DMs closed/ bad intents or suggestion_author is an int
+            answered_embed.add_field(name="Direct Message", value=f"User could not be dmed", inline=False)
 
-    else:
-        # If no errors occurred send successful message
-        approved_embed \
-            .add_field(name="Direct Message", value=f"{sg_author} dmed successfully", inline=False)
+        except Exception as exception:
+            # Any other error will be sent to the logs
+            answered_embed.add_field(name="Direct Message", value=f"User could not be dmed", inline=False)
+            await log_error(ctx, exception)
 
-    finally:
-        # Send the embed regardless of errors
-        await ctx.respond(embed=approved_embed)
+        else:
+            # If no errors occurred send successful message
+            answered_embed \
+                .add_field(name="Direct Message", value=f"{sg_author} dmed successfully", inline=False)
 
-        await db.execute('''
-            UPDATE "SUGGESTIONS"
-            SET "answered"=:answered, "approved"=:approved, "reason"=:reason, "approved_by"=:approved_by
-            WHERE "suggestion_number"=:suggestion_id;
-        ''', {
-            "answered": True,
-            "approved": is_approved,
-            "reason": reason,
-            "approved_by": ctx.author.id,
-            "suggestion_id": suggestion_id,
-        })
-        await db.commit()
+    # Send the embed
+    await ctx.respond(embed=answered_embed)
+
+    await db.execute('''
+        UPDATE "SUGGESTIONS"
+        SET "answered"=:answered, "approved"=:approved, "reason"=:reason, "approved_by"=:approved_by
+        WHERE "suggestion_number"=:suggestion_id;
+    ''', {
+        "answered": True,
+        "approved": is_approved,
+        "reason": reason,
+        "approved_by": ctx.author.id,
+        "suggestion_id": suggestion_id,
+    })
+    await db.commit()
 
 
 ################
@@ -217,23 +219,25 @@ async def suggest(ctx: tanjun.abc.MessageContext, suggestion: str,
 
 
 @tanjun.with_concurrency_limit("database_commands")
+@tanjun.with_bool_slash_option("dm", "Should the bot dm the user", default=True)
 @tanjun.with_str_slash_option("reason", "The reason for approving", default=None)
 @tanjun.with_int_slash_option("suggestion", "The suggestion's ID to approve", key="suggestion_id")
 @suggestion_group.as_sub_command("approve", "Approves the given suggestion", always_defer=True)
-async def suggestion_approve(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str,
+async def suggestion_approve(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, dm: bool,
                              config: Config = alluka.inject(type=Config),
                              db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
-    await answer(ctx, suggestion_id, reason, True, config, db)
+    await answer_suggestion(ctx, suggestion_id, reason, True, dm, config, db)
 
 
 @tanjun.with_concurrency_limit("database_commands")
+@tanjun.with_bool_slash_option("dm", "Should the bot dm the user", default=True)
 @tanjun.with_str_slash_option("reason", "The reason for denying", default=None)
 @tanjun.with_int_slash_option("suggestion", "The suggestion's ID to deny", key="suggestion_id")
 @suggestion_group.as_sub_command("deny", "Denies the given suggestion", always_defer=True)
-async def suggestion_deny(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str,
+async def suggestion_deny(ctx: tanjun.abc.SlashContext, suggestion_id: int, reason: str, dm: bool,
                           config: Config = alluka.inject(type=Config),
                           db: aiosqlite.Connection = alluka.inject(type=aiosqlite.Connection)):
-    await answer(ctx, suggestion_id, reason, False, config, db)
+    await answer_suggestion(ctx, suggestion_id, reason, False, dm, config, db)
 
 
 @tanjun.with_concurrency_limit("database_commands")
