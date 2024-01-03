@@ -122,6 +122,11 @@ class Info(TypedDict):
     info_channel_id: int
 
 
+class Triggers(TypedDict):
+    booster_role_id: int
+    trigger_role_id: int
+
+
 class Config(TypedDict, total=False):
     logo_url: str
     logo_url_dark: str
@@ -157,6 +162,7 @@ class Config(TypedDict, total=False):
     qotd: Qotd
     verify: Verify
     info: Info
+    triggers: Triggers
 
 
 class ConfigHandler(metaclass=Singleton):

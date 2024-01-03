@@ -160,6 +160,9 @@
     },
     "info": {
         "info_channel_id": 0
+    },
+    "triggers": {
+        "booster_role_id": 0,
+        "trigger_role_id": 0
     }
-
 }

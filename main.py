@@ -164,7 +164,7 @@ async def on_message(event: hikari.GuildMessageCreateEvent) -> None:
         await handle_warn(event, ConfigHandler().get_config())
 
     if TriggersFileHandler().is_trigger(event.message.content):
-        await TriggersFileHandler().handle_trigger(event)
+        await TriggersFileHandler().handle_trigger(event, ConfigHandler().get_config())
 
 
 if __name__ == "__main__":

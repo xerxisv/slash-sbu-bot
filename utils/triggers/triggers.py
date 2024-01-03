@@ -5,6 +5,7 @@ from typing import List, TypedDict
 import hikari
 
 from utils import Singleton
+from utils.config import Config
 
 
 class TriggerInfo(TypedDict):
@@ -97,11 +98,17 @@ class TriggersFileHandler(metaclass=Singleton):
 
         return self._triggers[trigger_name]['enabled']
 
-    async def handle_trigger(self, event: hikari.GuildMessageCreateEvent) -> None:
+    async def handle_trigger(self, event: hikari.GuildMessageCreateEvent, config: Config) -> None:
         content = event.message.content.upper()
 
         trigger: TriggerInfo = self._triggers[content]
+
         if event.message.author.id not in trigger['owner'] or not trigger['enabled']:
+            return
+
+        roles = event.get_member().role_ids
+        if not (config['triggers']['booster_role_id'] in roles or config['triggers']['trigger_role_id'] in roles or
+                config['mod_role_id'] in roles):
             return
 
         reply = trigger['reply'] if type(trigger['reply']) is str else choice(trigger['reply'])
