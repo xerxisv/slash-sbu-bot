@@ -41,8 +41,6 @@ async def check_req_routine(ctx: tanjun.abc.Context, ign: str, cute_name, is_jr:
 
     await session.close()
 
-    dungeon_lvl = 0
-    slayer_xp = 0
     weight = 0  # used to store the weight but also find the biggest weight in the profiles
 
     is_valid_profile = cute_name is None
@@ -56,7 +54,7 @@ async def check_req_routine(ctx: tanjun.abc.Context, ign: str, cute_name, is_jr:
                 is_valid_profile = True
                 selected_profile = profile
             elif profile["data"]["weight"]["senither"]["overall"] > weight:
-                weight = profile["data"]["weight"]["senither"]["overall"]
+                weight = int(profile["data"]["weight"]["senither"]["overall"])
                 selected_profile = profile
     except KeyError:
         embed = hikari.Embed(
@@ -79,8 +77,7 @@ async def check_req_routine(ctx: tanjun.abc.Context, ign: str, cute_name, is_jr:
 
     try:
         dungeon_lvl = int(selected_profile["data"]["dungeons"]["catacombs"]["level"]["level"])
-        slayer_xp = int(selected_profile["data"]["slayer_xp"])
-        weight = int(selected_profile["data"]["weight"]["senither"]["overall"])
+        slayer_xp = int(selected_profile["data"]["slayer"]["total_slayer_xp"])
     except KeyError:
         embed = hikari.Embed(
             title='Error',
@@ -89,6 +86,7 @@ async def check_req_routine(ctx: tanjun.abc.Context, ign: str, cute_name, is_jr:
             color=config['colors']['error']
         )
         await ctx.respond(embed=embed)
+        return
 
     guild = 'jr' if is_jr else 'main'
 
