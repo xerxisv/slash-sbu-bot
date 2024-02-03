@@ -159,7 +159,7 @@ async def hypixel(ctx: tanjun.abc.MessageContext, ign: str, config: Config = all
 @tanjun.with_argument('ign')
 @tanjun.as_message_command('skycrypt', 's')
 async def skycrypt(ctx: tanjun.abc.MessageContext, ign: str, profile: str = None):
-    await ctx.respond(fr'https://cupcake.shiiyu.moe/stats/{ign}/{profile if profile else ""}')
+    await ctx.respond(fr'https://sky.shiiyu.moe/stats/{ign}/{profile if profile else ""}')
 
 
 @component.with_command()
